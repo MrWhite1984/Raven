@@ -1,0 +1,31 @@
+version: '3.4'
+services:
+ postgres:
+  image: postgres:latest
+  environment:
+   POSTGRES_DB: TestDb
+   POSTGRES_USER: admin
+   POSTGRES_PASSWORD: p
+  ports:
+   - "1212:5432"
+  networks:
+   - RavenNetwork
+
+ raven:
+  build: ./Raven
+  environment:
+   - POSTGRES_HOST=postgres
+   - POSTGRES_DB=TestDb
+   - POSTGRES_USER=admin
+   - POSTGRES_PASSWORD=p
+  ports:
+   - "32778:8080"
+   - "32779:8081"
+  depends_on:
+   - postgres
+  networks:
+   - RavenNetwork
+
+networks:
+  RavenNetwork:
+    driver: bridge

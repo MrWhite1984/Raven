@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Raven;
+using Raven.DB.PSQL;
 
 namespace Raven.Services
 {
@@ -13,6 +14,7 @@ namespace Raven.Services
 
         public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
         {
+            var db = new AppDbContext();
             return Task.FromResult(new HelloReply
             {
                 Message = "Hello " + request.Name

@@ -7,6 +7,7 @@
     <UserSecretsId>4a6542f9-4939-490f-9925-db821f3c1baa</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,10 @@
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.csproj" />
   </ItemGroup>
 
 </Project>
