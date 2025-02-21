@@ -1,0 +1,11 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Raven";
+
+package raven;
+
+import "google/protobuf/timestamp.proto";
+
+service ContentHandler{
+
+}
