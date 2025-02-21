@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Raven.DTO\Raven.Entity.csproj" />
     <ProjectReference Include="..\Raven.DTO\Raven.Entity.csproj" />
+    <ProjectReference Include="..\Raven.Models\Raven.Models.csproj" />
   </ItemGroup>
 
 </Project>

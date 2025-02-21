@@ -11,6 +11,31 @@ services:
   networks:
    - RavenNetwork
 
+ minio:
+  image: minio/minio:latest
+  environment:
+   MINIO_ACCESS_KEY: "ravenMinIOaccess"
+   MINIO_SECRET_KEY: "ravenMinIOsecret"
+  command: server /data
+  ports:
+   - "9000:9000"
+  volumes:
+   - minio-data:/data
+  networks:
+   - RavenNetwork
+
+ neo4j:
+  image: neo4j:latest
+  environment:
+   NEO4J_AUTH: neo4j/ravenpas
+  ports:
+   - "7474:7474"
+   - "7687:7687"
+  volumes:
+   - neo4j-data:/var/lib/neo4j/data
+  networks:
+   - RavenNetwork
+
  raven:
   build: ./Raven
   environment:
@@ -23,9 +48,17 @@ services:
    - "32779:8081"
   depends_on:
    - postgres
+   - minio
+   - neo4j
   networks:
    - RavenNetwork
 
 networks:
   RavenNetwork:
     driver: bridge
+
+volumes:
+  minio-data:
+    driver: local
+  neo4j-data:
+    driver: local

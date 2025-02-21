@@ -6,6 +6,38 @@ package raven;
 
 import "google/protobuf/timestamp.proto";
 
-service ContentHandler{
+service ContentHandler
+{
+	rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+	rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+}
 
+message CategoryMessage
+{
+	uint32 id = 1;
+	string title = 2;
+	optional string image_file = 3;
+	uint32 post_count = 4;
+}
+
+message GetCategoriesRequest
+{
+
+}
+message GetCategoriesResponse
+{
+	repeated CategoryMessage entities = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message CreateCategoryRequest
+{
+	string title = 1;
+}
+message CreateCategoryResponse
+{
+	CategoryMessage category_message = 1;
+	uint32 code = 2;
+	string message = 3;
 }

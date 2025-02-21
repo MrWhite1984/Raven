@@ -17,11 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.Web-interface", "Rave
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.ML.UserRecommender", "Raven.ML.UserRecommender\Raven.ML.UserRecommender.csproj", "{6AC804CA-3534-475A-B33F-642CF28E7CFC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.Entity", "Raven.DTO\Raven.Entity.csproj", "{4F8BA980-47C8-42EF-84EC-373C02D6CB17}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{733629D4-6977-4BC4-B426-C409CCCB1FFA}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{F6890167-7F33-4CAA-BB13-4C7A627D6580}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raven.Models", "Raven.Models\Raven.Models.csproj", "{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,14 +57,14 @@ Global
 		{6AC804CA-3534-475A-B33F-642CF28E7CFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AC804CA-3534-475A-B33F-642CF28E7CFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AC804CA-3534-475A-B33F-642CF28E7CFC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4F8BA980-47C8-42EF-84EC-373C02D6CB17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4F8BA980-47C8-42EF-84EC-373C02D6CB17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4F8BA980-47C8-42EF-84EC-373C02D6CB17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4F8BA980-47C8-42EF-84EC-373C02D6CB17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
