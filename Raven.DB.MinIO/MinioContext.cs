@@ -9,10 +9,10 @@ namespace Raven.DB.MinIO
 {
     public class MinioContext
     {
-        private MinioClient _minioClient;
+        public MinioClient minioClient;
         public MinioContext()
         {
-            _minioClient = (MinioClient)new MinioClient()
+            minioClient = (MinioClient)new MinioClient()
                 .WithEndpoint("minio", 9000)
                 .WithCredentials("ravenMinIOaccess", "ravenMinIOsecret")
                 .Build();
@@ -33,10 +33,10 @@ namespace Raven.DB.MinIO
             foreach (var bucketName in bucketNames)
             {
                 var exArgs = new Minio.DataModel.Args.BucketExistsArgs().WithBucket(bucketName);
-                var bucketExists = await _minioClient.BucketExistsAsync(exArgs);
+                var bucketExists = await minioClient.BucketExistsAsync(exArgs);
                 if (!bucketExists)
                 {
-                    await _minioClient.MakeBucketAsync(new Minio.DataModel.Args.MakeBucketArgs().WithBucket(bucketName));
+                    await minioClient.MakeBucketAsync(new Minio.DataModel.Args.MakeBucketArgs().WithBucket(bucketName));
                 }
             }
         }

@@ -1,8 +1,10 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Raven.DB.PSQL.gRPC;
+using Raven.DB.MinIO;
 using Raven.Entity;
 using Raven.Models;
+using Google.Protobuf;
 
 namespace Raven.Services
 {
@@ -11,7 +13,7 @@ namespace Raven.Services
         public override Task<GetCategoriesResponse> GetCategories(GetCategoriesRequest request, ServerCallContext context)
         {
             GetCategoriesResponse response = new GetCategoriesResponse();
-            var dbResponse = Exporter.GetCategoriesList();
+            var dbResponse = DB.PSQL.gRPC.Exporter.GetCategoriesList();
             if (dbResponse.IsCanceled)
             {
                 response.Entities.Add(new List<CategoryMessage>());
@@ -27,12 +29,20 @@ namespace Raven.Services
             else
             {
                 foreach (var category in dbResponse.Result.Item1)
-                    response.Entities
-                        .Add(new CategoryMessage() {
+                    if (!category.ImageFile.Equals(Guid.Empty))
+                    {
+                        response.Entities
+                        .Add(new CategoryMessage()
+                        {
                             Id = (uint)category.Id,
                             Title = category.Title,
                             ImageFile = category.ImageFile.ToString(),
-                            PostCount = (uint)category.PostCount});
+                            PostCount = (uint)category.PostCount,
+                            Image = ByteString.CopyFrom(DB.MinIO.Exporter.GetCategoryImage(category.ImageFile).Result.Item2)
+                        });
+                    }
+
+                    
                 response.Code = 200;
                 response.Message = dbResponse.Result.Item2;
             }
@@ -42,31 +52,84 @@ namespace Raven.Services
         public override Task<CreateCategoryResponse> CreateCategory(CreateCategoryRequest request, ServerCallContext context)
         {
             CreateCategoryResponse response = new CreateCategoryResponse();
-            var dbResponse = Importer.CreateCategory(new Categories() { Title = request.Title });
-            if (dbResponse.IsCanceled)
+
+            if(request.Image.Length != 0)
             {
-                response.CategoryMessage = null;
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
-            }
-            else if (dbResponse.Result.Item2 == null)
-            {
-                response.CategoryMessage = null;
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
+                var minioResponse = DB.MinIO.Importer.AddNewCategoryImage(request.Image.ToByteArray());
+                if (minioResponse.IsCanceled)
+                {
+                    response.CategoryMessage = null;
+                    response.Code = 500;
+                    response.Message = minioResponse.Result.Item1;
+                }
+                else if (minioResponse.Result.Item2.Equals(null))
+                {
+                    response.CategoryMessage = null;
+                    response.Code = 500;
+                    response.Message = minioResponse.Result.Item1;
+                }
+                else
+                {
+                    var dbResponse = DB.PSQL.gRPC.Importer.CreateCategory(new Categories() 
+                    { 
+                        Title = request.Title, 
+                        ImageFile = minioResponse.Result.Item2 ?? Guid.Empty 
+                    });
+                    if (dbResponse.IsCanceled)
+                    {
+                        response.CategoryMessage = null;
+                        response.Code = 500;
+                        response.Message = dbResponse.Result.Item1;
+                    }
+                    else if (dbResponse.Result.Item2 == null)
+                    {
+                        response.CategoryMessage = null;
+                        response.Code = 500;
+                        response.Message = dbResponse.Result.Item1;
+                    }
+                    else
+                    {
+                        response.CategoryMessage = new CategoryMessage()
+                        {
+                            Id = dbResponse.Result.Item2.Id,
+                            Title = dbResponse.Result.Item2.Title,
+                            ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
+                            PostCount = dbResponse.Result.Item2.PostCount
+                        };
+                        response.Code = 200;
+                        response.Message += dbResponse.Result.Item1;
+                    }
+                }
             }
             else
             {
-                response.CategoryMessage = new CategoryMessage()
-                { 
-                    Id = dbResponse.Result.Item2.Id,
-                    Title = dbResponse.Result.Item2.Title,
-                    ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                    PostCount = dbResponse.Result.Item2.PostCount
-                };
-                response.Code = 200;
-                response.Message += dbResponse.Result.Item1;
+                var dbResponse = DB.PSQL.gRPC.Importer.CreateCategory(new Categories() { Title = request.Title });
+                if (dbResponse.IsCanceled)
+                {
+                    response.CategoryMessage = null;
+                    response.Code = 500;
+                    response.Message = dbResponse.Result.Item1;
+                }
+                else if (dbResponse.Result.Item2 == null)
+                {
+                    response.CategoryMessage = null;
+                    response.Code = 500;
+                    response.Message = dbResponse.Result.Item1;
+                }
+                else
+                {
+                    response.CategoryMessage = new CategoryMessage()
+                    {
+                        Id = dbResponse.Result.Item2.Id,
+                        Title = dbResponse.Result.Item2.Title,
+                        ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
+                        PostCount = dbResponse.Result.Item2.PostCount
+                    };
+                    response.Code = 200;
+                    response.Message += dbResponse.Result.Item1;
+                }
             }
+                        
             return Task.FromResult(response);
         }
     }

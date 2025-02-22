@@ -18,6 +18,7 @@ message CategoryMessage
 	string title = 2;
 	optional string image_file = 3;
 	uint32 post_count = 4;
+	bytes image = 5;
 }
 
 message GetCategoriesRequest
@@ -34,6 +35,7 @@ message GetCategoriesResponse
 message CreateCategoryRequest
 {
 	string title = 1;
+	bytes image = 2;
 }
 message CreateCategoryResponse
 {
