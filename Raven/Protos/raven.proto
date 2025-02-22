@@ -114,3 +114,161 @@ message CreateTagResponse
 	string message = 3;
 }
 
+
+
+//Post
+service PostHandler
+{
+	rpc GetPosts(GetPostsRequest) returns (GetPostsResponse);
+	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+	rpc GetTextMatcherPosts(GetTextMatcherPostsRequest) returns (GetTextMatcherPostsResponse);
+	rpc GetRecommendedPosts(GetRecommendedPostsRequest) returns (GetRecommendedPostsResponse);
+	rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResoponse);
+	rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
+	rpc AddPostToBookmarks(AddPostToBookmarksRequest) returns (AddPostToBookmarksResponse);
+	rpc AddPostToViews(AddPostToViewsRequest) returns (AddPostToViewsResponse);
+	rpc AddPostToLiked(AddPostToLikedRequest) returns (AddPostToLikedResponse);
+}
+
+message PostMessage
+{
+	optional string id = 1;
+	string title = 2;
+	string body = 3;
+	optional uint32 category_id = 4;
+	optional CategoryMessage category_message = 5;
+	optional uint32 likes_count = 6;
+	optional bool is_liked = 7;
+	optional uint32 comment_count = 8;
+	optional uint32 views_count = 9;
+	optional bool is_viewed = 10;
+	optional uint32 bookmarks_count = 11;
+	optional bool is_bookmarked = 12;
+	string author_id = 13;
+	optional google.protobuf.Timestamp created_at = 14;
+	optional google.protobuf.Timestamp updated_at = 15;
+	repeated PostContentMessage post_content_message = 16;
+}
+enum ContentTypeEnum
+{
+	image = 0;
+	video = 1;
+}
+message PostContentMessage
+{
+	optional string content_id = 1;
+	string marker = 2;
+	ContentTypeEnum content_type_enum = 3;
+}
+
+message GetPostsRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string user_id = 3;
+}
+message GetPostsResponse
+{
+	uint32 nextCursor = 1;
+	repeated PostMessage entities = 2;
+}
+
+message CreatePostRequest
+{
+	string title = 1;
+	string body = 2;
+	uint32 category_id = 3;
+	string author_id = 4;
+	repeated PostContentMessage post_content_message = 5;
+}
+message CreatePostResponse
+{
+	PostMessage post = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message GetTextMatcherPostsRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string user_id = 3;
+}
+message GetTextMatcherPostsResponse
+{
+	uint32 nextCursor = 1;
+	repeated PostMessage entities = 2;
+}
+
+message GetRecommendedPostsRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string user_id = 3;
+}
+message GetRecommendedPostsResponse
+{
+	uint32 nextCursor = 1;
+	repeated PostMessage entities = 2;
+}
+
+message UpdatePostRequest
+{
+	string post_id = 1;
+	string title = 2;
+	string body = 3;
+	uint32 category_id = 4;
+	string author_id = 5;
+	repeated PostContentMessage post_content_message = 6;
+}
+message UpdatePostResoponse
+{
+	PostMessage post = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message GetUserPostsRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string user_id = 3;
+}
+message GetUserPostsResponse
+{
+	uint32 nextCursor = 1;
+	repeated PostMessage entities = 2;
+}
+
+message AddPostToBookmarksRequest
+{
+	string user_id = 1;
+	string post_id = 2;
+}
+message AddPostToBookmarksResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
+message AddPostToLikedRequest
+{
+	string user_id = 1;
+	string post_id = 2;
+}
+message AddPostToLikedResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
+message AddPostToViewsRequest
+{
+	string user_id = 1;
+	string post_id = 2;
+}
+message AddPostToViewsResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
