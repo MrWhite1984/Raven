@@ -1,4 +1,5 @@
-﻿using Raven.Entity;
+﻿
+using Raven.DB.PSQL.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,25 @@ namespace Raven.DB.PSQL.gRPC
             catch (Exception ex)
             {
                 return(ex.Message, null);
+            }
+        }
+
+        public static async Task<(string, Tags)> CreateTag(Tags tag)
+        {
+            (string, Tags) response = new();
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    response.Item2 = db.Tags.Add(tag).Entity;
+                    await db.SaveChangesAsync();
+                    response.Item1 = $"Тег {response.Item2.Name} добавлена в базу данных";
+                }
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message, null);
             }
         }
     }

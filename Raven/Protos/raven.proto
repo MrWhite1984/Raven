@@ -6,7 +6,39 @@ package raven;
 
 import "google/protobuf/timestamp.proto";
 
-service ContentHandler
+//User
+service UsersHandler
+{
+	rpc GetUsers(GetUsersRequest) returns (GetUsersResponse); 
+	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}
+
+message GetUsersRequest
+{
+
+}
+message GetUsersResponse
+{
+	repeated string entities = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message CreateUserRequest
+{
+	string user_id = 1;
+}
+message CreateUserResponse
+{
+	string user = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+
+
+//Category
+service CategoriesHandler
 {
 	rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
 	rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
@@ -18,7 +50,7 @@ message CategoryMessage
 	string title = 2;
 	optional string image_file = 3;
 	uint32 post_count = 4;
-	bytes image = 5;
+	optional bytes image = 5;
 }
 
 message GetCategoriesRequest
@@ -43,3 +75,42 @@ message CreateCategoryResponse
 	uint32 code = 2;
 	string message = 3;
 }
+
+
+
+//Tag
+service TagHandler
+{
+	//Tag
+	rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
+	rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+}
+
+message TagMessage
+{
+	uint32 id = 1;
+	string name = 2;
+}
+
+message GetTagsRequest
+{
+
+}
+message GetTagsResponse
+{
+	repeated TagMessage entities = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message CreateTagRequest
+{
+	string name = 1;
+}
+message CreateTagResponse
+{
+	TagMessage tag_message = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+

@@ -2,13 +2,14 @@
 using Grpc.Core;
 using Raven.DB.PSQL.gRPC;
 using Raven.DB.MinIO;
-using Raven.Entity;
 using Raven.Models;
 using Google.Protobuf;
+using Microsoft.AspNetCore.Identity.Data;
+using Raven.DB.PSQL.Entity;
 
 namespace Raven.Services
 {
-    public class ContentService : ContentHandler.ContentHandlerBase
+    public class CategoryService : CategoriesHandler.CategoriesHandlerBase
     {
         public override Task<GetCategoriesResponse> GetCategories(GetCategoriesRequest request, ServerCallContext context)
         {
@@ -39,6 +40,16 @@ namespace Raven.Services
                             ImageFile = category.ImageFile.ToString(),
                             PostCount = (uint)category.PostCount,
                             Image = ByteString.CopyFrom(DB.MinIO.Exporter.GetCategoryImage(category.ImageFile).Result.Item2)
+                        });
+                    }
+                    else
+                    {
+                        response.Entities
+                        .Add(new CategoryMessage()
+                        {
+                            Id = (uint)category.Id,
+                            Title = category.Title,
+                            PostCount = (uint)category.PostCount
                         });
                     }
 
@@ -91,10 +102,10 @@ namespace Raven.Services
                     {
                         response.CategoryMessage = new CategoryMessage()
                         {
-                            Id = dbResponse.Result.Item2.Id,
+                            Id = (uint)dbResponse.Result.Item2.Id,
                             Title = dbResponse.Result.Item2.Title,
                             ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                            PostCount = dbResponse.Result.Item2.PostCount
+                            PostCount = (uint)dbResponse.Result.Item2.PostCount
                         };
                         response.Code = 200;
                         response.Message += dbResponse.Result.Item1;
@@ -120,10 +131,10 @@ namespace Raven.Services
                 {
                     response.CategoryMessage = new CategoryMessage()
                     {
-                        Id = dbResponse.Result.Item2.Id,
+                        Id = (uint)dbResponse.Result.Item2.Id,
                         Title = dbResponse.Result.Item2.Title,
                         ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                        PostCount = dbResponse.Result.Item2.PostCount
+                        PostCount = (uint)dbResponse.Result.Item2.PostCount
                     };
                     response.Code = 200;
                     response.Message += dbResponse.Result.Item1;
@@ -132,5 +143,6 @@ namespace Raven.Services
                         
             return Task.FromResult(response);
         }
+        
     }
 }

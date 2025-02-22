@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Raven.Entity;
+using Raven.DB.PSQL.Entity;
 
 namespace Raven.DB.PSQL
 {
