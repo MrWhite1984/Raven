@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Raven.DB.PSQL.Entity;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 namespace Raven.DB.PSQL
 {

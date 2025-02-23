@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +22,6 @@ namespace Raven.DB.PSQL.Entity
         public virtual Users User { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public float[] Vectors { get; set; }
         public virtual List<TagsPosts> TagsPosts { get; set; } = [];
         public virtual List<PostContent> PostContents { get; set; } = [];
 

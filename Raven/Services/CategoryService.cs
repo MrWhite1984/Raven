@@ -1,11 +1,12 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Raven.DB.PSQL.gRPC;
 using Raven.DB.MinIO;
 using Raven.Models;
 using Google.Protobuf;
 using Microsoft.AspNetCore.Identity.Data;
 using Raven.DB.PSQL.Entity;
+using Raven.DB.PSQL.gRPC.Exporters;
+using Raven.DB.PSQL.gRPC.Importers;
 
 namespace Raven.Services
 {
@@ -14,7 +15,7 @@ namespace Raven.Services
         public override Task<GetCategoriesResponse> GetCategories(GetCategoriesRequest request, ServerCallContext context)
         {
             GetCategoriesResponse response = new GetCategoriesResponse();
-            var dbResponse = DB.PSQL.gRPC.Exporter.GetCategoriesList();
+            var dbResponse = CategoryExporter.GetCategoriesList();
             if (dbResponse.IsCanceled)
             {
                 response.Entities.Add(new List<CategoryMessage>());
@@ -81,7 +82,7 @@ namespace Raven.Services
                 }
                 else
                 {
-                    var dbResponse = DB.PSQL.gRPC.Importer.CreateCategory(new Categories() 
+                    var dbResponse = CategoryImporter.CreateCategory(new Categories() 
                     { 
                         Title = request.Title, 
                         ImageFile = minioResponse.Result.Item2 ?? Guid.Empty 
@@ -114,7 +115,7 @@ namespace Raven.Services
             }
             else
             {
-                var dbResponse = DB.PSQL.gRPC.Importer.CreateCategory(new Categories() { Title = request.Title });
+                var dbResponse = CategoryImporter.CreateCategory(new Categories() { Title = request.Title });
                 if (dbResponse.IsCanceled)
                 {
                     response.CategoryMessage = null;
@@ -143,6 +144,6 @@ namespace Raven.Services
                         
             return Task.FromResult(response);
         }
-        
+        //ToDo добавить остальные методы
     }
 }

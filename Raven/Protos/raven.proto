@@ -11,6 +11,7 @@ service UsersHandler
 {
 	rpc GetUsers(GetUsersRequest) returns (GetUsersResponse); 
 	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+	rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
 }
 
 message GetUsersRequest
@@ -35,6 +36,16 @@ message CreateUserResponse
 	string message = 3;
 }
 
+message DeleteUserRequest
+{
+	string id = 1;
+}
+message DeleteUserResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
 
 
 //Category
@@ -42,6 +53,9 @@ service CategoriesHandler
 {
 	rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
 	rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+	rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+	
+	//ToDo добавить rpc изменения
 }
 
 message CategoryMessage
@@ -76,6 +90,16 @@ message CreateCategoryResponse
 	string message = 3;
 }
 
+message DeleteCategoryRequest
+{
+	uint32 id = 1;
+}
+message DeleteCategoryResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
 
 
 //Tag
@@ -84,6 +108,9 @@ service TagHandler
 	//Tag
 	rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
 	rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+	rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse);
+
+	//ToDo добавить rpc изменения
 }
 
 message TagMessage
@@ -114,6 +141,16 @@ message CreateTagResponse
 	string message = 3;
 }
 
+message DeleteTagRequest
+{
+	uint32 id = 1;
+}
+message DeleteTagResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
 
 
 //Post
@@ -121,13 +158,13 @@ service PostHandler
 {
 	rpc GetPosts(GetPostsRequest) returns (GetPostsResponse);
 	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
-	rpc GetTextMatcherPosts(GetTextMatcherPostsRequest) returns (GetTextMatcherPostsResponse);
 	rpc GetRecommendedPosts(GetRecommendedPostsRequest) returns (GetRecommendedPostsResponse);
 	rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResoponse);
 	rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
 	rpc AddPostToBookmarks(AddPostToBookmarksRequest) returns (AddPostToBookmarksResponse);
 	rpc AddPostToViews(AddPostToViewsRequest) returns (AddPostToViewsResponse);
 	rpc AddPostToLiked(AddPostToLikedRequest) returns (AddPostToLikedResponse);
+	rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
 }
 
 message PostMessage
@@ -148,6 +185,7 @@ message PostMessage
 	optional google.protobuf.Timestamp created_at = 14;
 	optional google.protobuf.Timestamp updated_at = 15;
 	repeated PostContentMessage post_content_message = 16;
+	optional repeated TagMessage tags = 17;
 }
 enum ContentTypeEnum
 {
@@ -179,25 +217,14 @@ message CreatePostRequest
 	string body = 2;
 	uint32 category_id = 3;
 	string author_id = 4;
-	repeated PostContentMessage post_content_message = 5;
+	repeated uint32 tag_ids = 5
+	repeated PostContentMessage post_content_message = 6;
 }
 message CreatePostResponse
 {
 	PostMessage post = 1;
 	uint32 code = 2;
 	string message = 3;
-}
-
-message GetTextMatcherPostsRequest
-{
-	optional uint32 cursor = 1;
-	uint32 page_size = 2;
-	string user_id = 3;
-}
-message GetTextMatcherPostsResponse
-{
-	uint32 nextCursor = 1;
-	repeated PostMessage entities = 2;
 }
 
 message GetRecommendedPostsRequest
@@ -268,6 +295,122 @@ message AddPostToViewsRequest
 	string post_id = 2;
 }
 message AddPostToViewsResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
+message DeletePostRequest
+{
+	string post_id = 1;
+}
+message DeletePostResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
+
+
+service CommentHandler
+{
+	rpc CreateCommentToPost(CreateCommentToPostRequest) returns (CreateCommentToPostResponse);
+	rpc CreateCommentToComment(CreateCommentToCommentRequest) returns (CreateCommentToCommentResponse);
+	rpc GetCommentsToPost(GetCommentsToPostRequest) returns (GetCommentsToPostResponse);
+	rpc GetCommentsToComment(GetCommentsToCommentRequest) returns (GetCommentsToCommentResponse);
+	rpc UpdateComment(UpdateCommentRequest) returns (UpdateCommentResponse);
+	rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+}
+
+message CommentMessage
+{
+	optional string id = 1;
+	string body = 2;
+	optional uint32 comment_count = 3;
+	optional uint32 likes_count = 4;
+	string author_id = 5;
+	optional google.protobuf.Timestamp created_at = 6;
+	optional google.protobuf.Timestamp updated_at = 7;
+	repeated CommentContentMessage comment_content_message = 8;
+}
+message CommentContentMessage 
+{
+	optional string content_id = 1;
+	string marker = 2;
+	ContentTypeEnum content_type_enum = 3;
+}
+
+message CreateCommentToPostRequest
+{
+	string body = 1;
+	string author_id = 2;
+	string post_id = 3;
+	repeated CommentContentMessage comment_content_message = 4;
+}
+message CreateCommentToPostResponse
+{
+	CommentMessage comment = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message CreateCommentToCommentRequest
+{
+	string body = 1;
+	string author_id = 2;
+	string post_id = 3;
+	string comment_id = 4;
+	repeated CommentContentMessage comment_content_message = 5;
+}
+message CreateCommentToCommentResponse
+{
+	CommentMessage comment = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message GetCommentsToPostRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string post_id = 3;
+}
+message GetCommentsToPostResponse
+{
+	uint32 nextCursor = 1;
+	repeated CommentMessage entities = 2;
+}
+
+message GetCommentsToCommentRequest
+{
+	optional uint32 cursor = 1;
+	uint32 page_size = 2;
+	string comment_id = 3;
+}
+message GetCommentsToCommentResponse
+{
+	uint32 nextCursor = 1;
+	repeated CommentMessage entities = 2;
+}
+
+message UpdateCommentRequest
+{
+	string comment_id = 1;
+	string body = 2;
+	repeated CommentContentMessage comment_content_message = 3;
+}
+message UpdateCommentResponse
+{
+	CommentMessage comment = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message DeleteCommentRequest
+{
+	string comment_id = 1;
+}
+message DeleteCommentResponse
 {
 	uint32 code = 1;
 	string message = 2;

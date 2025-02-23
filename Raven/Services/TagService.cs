@@ -1,5 +1,7 @@
 ﻿using Grpc.Core;
 using Raven.DB.PSQL.Entity;
+using Raven.DB.PSQL.gRPC.Exporters;
+using Raven.DB.PSQL.gRPC.Importers;
 
 namespace Raven.Services
 {
@@ -8,7 +10,7 @@ namespace Raven.Services
         public override Task<GetTagsResponse> GetTags(GetTagsRequest request, ServerCallContext context)
         {
             GetTagsResponse response = new GetTagsResponse();
-            var dbResponse = DB.PSQL.gRPC.Exporter.GetTagsList();
+            var dbResponse = TagExporter.GetTagsList();
             if (dbResponse.IsCanceled)
             {
                 response.Entities.Add(new List<TagMessage>());
@@ -41,7 +43,7 @@ namespace Raven.Services
         public override Task<CreateTagResponse> CreateTag(CreateTagRequest request, ServerCallContext context)
         {
             CreateTagResponse response = new CreateTagResponse();
-            var dbResponse = DB.PSQL.gRPC.Importer.CreateTag(new Tags()
+            var dbResponse = TagImporter.CreateTag(new Tags()
             {
                 Name = request.Name
             });
@@ -69,5 +71,7 @@ namespace Raven.Services
             }
             return Task.FromResult(response);
         }
+
+        //ToDo описать остальные методы
     }
 }
