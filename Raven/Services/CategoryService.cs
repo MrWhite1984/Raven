@@ -11,7 +11,7 @@ using Raven.DB.PSQL.gRPC.Updaters;
 
 namespace Raven.Services
 {
-    public class CategoryService : CategoriesHandler.CategoriesHandlerBase
+    public class CategoryService : CategoryHandler.CategoryHandlerBase
     {
         public override Task<GetCategoriesResponse> GetCategories(GetCategoriesRequest request, ServerCallContext context)
         {

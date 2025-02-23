@@ -20,8 +20,4 @@
     <ProjectReference Include="..\Raven.Models\Raven.Models.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="gRPC\Deleters\" />
-  </ItemGroup>
-
 </Project>

@@ -4,7 +4,7 @@ using Raven.DB.PSQL.gRPC.Importers;
 
 namespace Raven.Services
 {
-    public class UserService : UsersHandler.UsersHandlerBase
+    public class UserService : UserHandler.UserHandlerBase
     {
         public override Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
         {

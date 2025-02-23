@@ -7,7 +7,7 @@ package raven;
 import "google/protobuf/timestamp.proto";
 
 //User
-service UsersHandler
+service UserHandler
 {
 	rpc GetUsers(GetUsersRequest) returns (GetUsersResponse); 
 	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
@@ -38,7 +38,7 @@ message CreateUserResponse
 
 
 //Category
-service CategoriesHandler
+service CategoryHandler
 {
 	rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
 	rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
