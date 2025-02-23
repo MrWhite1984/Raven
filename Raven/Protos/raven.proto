@@ -42,9 +42,7 @@ service CategoriesHandler
 {
 	rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
 	rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
-	rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
-	
-	//ToDo добавить rpc изменения
+	rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
 }
 
 message CategoryMessage
@@ -79,14 +77,17 @@ message CreateCategoryResponse
 	string message = 3;
 }
 
-message DeleteCategoryRequest
+message UpdateCategoryRequest
 {
 	uint32 id = 1;
+	string title = 2;
+	bytes image = 3;
 }
-message DeleteCategoryResponse
+message UpdateCategoryResponse
 {
-	uint32 code = 1;
-	string message = 2;
+	CategoryMessage category_message = 1;
+	uint32 code = 2;
+	string message = 3;
 }
 
 
@@ -94,12 +95,10 @@ message DeleteCategoryResponse
 //Tag
 service TagHandler
 {
-	//Tag
 	rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
 	rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+	rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse);
 	rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse);
-
-	//ToDo добавить rpc изменения
 }
 
 message TagMessage
@@ -124,6 +123,18 @@ message CreateTagRequest
 	string name = 1;
 }
 message CreateTagResponse
+{
+	TagMessage tag_message = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message UpdateTagRequest
+{
+	uint32 id = 1;
+	string name = 2;
+}
+message UpdateTagResponse
 {
 	TagMessage tag_message = 1;
 	uint32 code = 2;
