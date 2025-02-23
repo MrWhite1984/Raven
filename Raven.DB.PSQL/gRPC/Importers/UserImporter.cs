@@ -1,4 +1,5 @@
 ﻿using Raven.DB.PSQL.Entity;
+using Raven.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace Raven.DB.PSQL.gRPC.Importers
 {
-    public class TagImporter
+    public class UserImporter
     {
-        public static async Task<(string, Tags)> CreateTag(Tags tag)
+        public static async Task<(string, Users)> CreateUser(Users user)
         {
-            (string, Tags) response = new();
+            (string, Users) response = new();
             try
             {
                 using (var db = new AppDbContext())
                 {
-                    response.Item2 = db.Tags.Add(tag).Entity;
+                    response.Item2 = db.Users.Add(user).Entity;
                     await db.SaveChangesAsync();
-                    response.Item1 = $"Тег {response.Item2.Name} добавлен в базу данных";
+                    response.Item1 = $"Пользователь {response.Item2.Id} добавлен в базу данных";
                 }
                 return response;
             }

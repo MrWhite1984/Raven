@@ -40,7 +40,7 @@ namespace Raven.Services
                             Title = category.Title,
                             ImageFile = category.ImageFile.ToString(),
                             PostCount = (uint)category.PostCount,
-                            Image = ByteString.CopyFrom(DB.MinIO.Exporter.GetCategoryImage(category.ImageFile).Result.Item2)
+                            Image = ByteString.CopyFrom(Exporter.GetCategoryImage(category.ImageFile).Result.Item2)
                         });
                     }
                     else
@@ -67,7 +67,7 @@ namespace Raven.Services
 
             if(request.Image.Length != 0)
             {
-                var minioResponse = DB.MinIO.Importer.AddNewCategoryImage(request.Image.ToByteArray());
+                var minioResponse = Importer.AddNewCategoryImage(request.Image.ToByteArray());
                 if (minioResponse.IsCanceled)
                 {
                     response.CategoryMessage = null;

@@ -11,7 +11,6 @@ service UsersHandler
 {
 	rpc GetUsers(GetUsersRequest) returns (GetUsersResponse); 
 	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-	rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
 }
 
 message GetUsersRequest
@@ -34,16 +33,6 @@ message CreateUserResponse
 	string user = 1;
 	uint32 code = 2;
 	string message = 3;
-}
-
-message DeleteUserRequest
-{
-	string id = 1;
-}
-message DeleteUserResponse
-{
-	uint32 code = 1;
-	string message = 2;
 }
 
 
@@ -185,7 +174,7 @@ message PostMessage
 	optional google.protobuf.Timestamp created_at = 14;
 	optional google.protobuf.Timestamp updated_at = 15;
 	repeated PostContentMessage post_content_message = 16;
-	optional repeated TagMessage tags = 17;
+	repeated TagMessage tags = 17;
 }
 enum ContentTypeEnum
 {
@@ -217,7 +206,7 @@ message CreatePostRequest
 	string body = 2;
 	uint32 category_id = 3;
 	string author_id = 4;
-	repeated uint32 tag_ids = 5
+	repeated uint32 tag_ids = 5;
 	repeated PostContentMessage post_content_message = 6;
 }
 message CreatePostResponse
