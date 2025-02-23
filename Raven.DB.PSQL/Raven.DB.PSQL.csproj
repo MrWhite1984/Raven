@@ -21,8 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="gRPC\Updater\" />
-    <Folder Include="gRPC\Deleter\" />
+    <Folder Include="gRPC\Deleters\" />
   </ItemGroup>
 
 </Project>
