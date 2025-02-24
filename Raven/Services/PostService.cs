@@ -3,12 +3,14 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
 using Raven.DB.MinIO;
+using Raven.DB.Neo4j.Deleters;
 using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.Entity;
 using Raven.DB.PSQL.Entity.@enum;
 using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
+using Raven.DB.PSQL.gRPC.Updaters;
 
 namespace Raven.Services
 {
@@ -234,6 +236,21 @@ namespace Raven.Services
         public override Task<AddPostToLikedResponse> AddPostToLiked(AddPostToLikedRequest request, ServerCallContext context)
         {
             var response = new AddPostToLikedResponse();
+            var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
+            if(getPostResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getPostResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            getPostResponse.Result.Item1.LikesCount++;
+            var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
+            if(updatePostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = updatePostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
             var neo4jResponse = Neo4jRelationshipImporter.AddPostLikeRelationship(request.UserId, request.PostId).Result;
             if(neo4jResponse != "OK")
             {
@@ -251,6 +268,21 @@ namespace Raven.Services
         public override Task<AddPostToViewsResponse> AddPostToViews(AddPostToViewsRequest request, ServerCallContext context)
         {
             var response = new AddPostToViewsResponse();
+            var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
+            if (getPostResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getPostResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            getPostResponse.Result.Item1.ViewsCount++;
+            var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
+            if (updatePostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = updatePostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
             var neo4jResponse = Neo4jRelationshipImporter.AddPostViewRelationship(request.UserId, request.PostId).Result;
             if (neo4jResponse != "OK")
             {
@@ -268,6 +300,21 @@ namespace Raven.Services
         public override Task<AddPostToBookmarksResponse> AddPostToBookmarks(AddPostToBookmarksRequest request, ServerCallContext context)
         {
             var response = new AddPostToBookmarksResponse();
+            var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
+            if (getPostResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getPostResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            getPostResponse.Result.Item1.BookmarksCount++;
+            var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
+            if (updatePostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = updatePostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
             var neo4jResponse = Neo4jRelationshipImporter.AddPostBookmarkRelationship(request.UserId, request.PostId).Result;
             if (neo4jResponse != "OK")
             {
@@ -281,5 +328,58 @@ namespace Raven.Services
             }
             return Task.FromResult(response);
         }
+
+        public override Task<DeletePostResponse> DeletePost(DeletePostRequest request, ServerCallContext context)
+        {
+            DeletePostResponse response = new DeletePostResponse();
+            var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
+            if (getPostResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getPostResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            var deletePostResponse = PostDeleter.DeletePost(Guid.Parse(request.PostId));
+            if(deletePostResponse.Result != "OK")
+            {
+                response.Code = 500;
+                response.Message = deletePostResponse.Result;
+                return Task.FromResult(response);
+            }
+            var neo4jResponse = Neo4jPostDeleter.DeletePost(request.PostId);
+            if (neo4jResponse.Result != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jResponse.Result;
+                return Task.FromResult(response);
+            }
+            foreach(var content in getPostResponse.Result.Item1.PostContents)
+            {
+                if(content.ContentType == ContentType.Image)
+                {
+                    var deletePostContentResponse = Deleter.DeletePostImage(content.ContentId);
+                    if(deletePostContentResponse.Result != "OK")
+                    {
+                        response.Code = 500;
+                        response.Message = deletePostContentResponse.Result;
+                        return Task.FromResult(response);
+                    }
+                }
+                else
+                {
+                    var deletePostContentResponse = Deleter.DeletePostVideo(content.ContentId);
+                    if (deletePostContentResponse.Result != "OK")
+                    {
+                        response.Code = 500;
+                        response.Message = deletePostContentResponse.Result;
+                        return Task.FromResult(response);
+                    }
+                }
+            }
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
     }
+
 }

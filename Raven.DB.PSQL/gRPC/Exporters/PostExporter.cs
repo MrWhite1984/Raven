@@ -17,6 +17,11 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 using (var db = new AppDbContext())
                 {
                     Posts post = await db.Posts
+                        .Include(o => o.TagsPosts)
+                        .ThenInclude(o => o.Tag)
+                        .Include(o => o.PostContents)
+                        .Include(o => o.User)
+                        .Include(o => o.CategoryPost)
                         .FirstOrDefaultAsync(p => p.Id == id);
 
                     return (post, "OK");

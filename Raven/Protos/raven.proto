@@ -13,10 +13,7 @@ service UserHandler
 	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
 }
 
-message GetUsersRequest
-{
-
-}
+message GetUsersRequest{}
 message GetUsersResponse
 {
 	repeated string entities = 1;
@@ -55,9 +52,7 @@ message CategoryMessage
 }
 
 message GetCategoriesRequest
-{
-
-}
+{}
 message GetCategoriesResponse
 {
 	repeated CategoryMessage entities = 1;
@@ -108,9 +103,7 @@ message TagMessage
 }
 
 message GetTagsRequest
-{
-
-}
+{}
 message GetTagsResponse
 {
 	repeated TagMessage entities = 1;
