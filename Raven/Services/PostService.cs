@@ -226,5 +226,56 @@ namespace Raven.Services
             response.Message = "OK";
             return Task.FromResult(response);
         }
+
+        public override Task<AddPostToLikedResponse> AddPostToLiked(AddPostToLikedRequest request, ServerCallContext context)
+        {
+            var response = new AddPostToLikedResponse();
+            var neo4jResponse = Neo4jRelationshipImporter.AddPostLikeRelationship(request.UserId, request.PostId).Result;
+            if(neo4jResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jResponse;
+            }
+            else
+            {
+                response.Code = 200;
+                response.Message = neo4jResponse;
+            }
+            return Task.FromResult(response);
+        }
+
+        public override Task<AddPostToViewsResponse> AddPostToViews(AddPostToViewsRequest request, ServerCallContext context)
+        {
+            var response = new AddPostToViewsResponse();
+            var neo4jResponse = Neo4jRelationshipImporter.AddPostViewRelationship(request.UserId, request.PostId).Result;
+            if (neo4jResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jResponse;
+            }
+            else
+            {
+                response.Code = 200;
+                response.Message = neo4jResponse;
+            }
+            return Task.FromResult(response);
+        }
+
+        public override Task<AddPostToBookmarksResponse> AddPostToBookmarks(AddPostToBookmarksRequest request, ServerCallContext context)
+        {
+            var response = new AddPostToBookmarksResponse();
+            var neo4jResponse = Neo4jRelationshipImporter.AddPostBookmarkRelationship(request.UserId, request.PostId).Result;
+            if (neo4jResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jResponse;
+            }
+            else
+            {
+                response.Code = 200;
+                response.Message = neo4jResponse;
+            }
+            return Task.FromResult(response);
+        }
     }
 }
