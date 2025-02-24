@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
 using Raven.DB.MinIO;
+using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.Entity;
 using Raven.DB.PSQL.Entity.@enum;
 using Raven.DB.PSQL.gRPC.Exporters;
@@ -184,6 +185,16 @@ namespace Raven.Services
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = addPostContentResponse.Result.Item1;
+                        return Task.FromResult(response);
+                    }
+                    var addPostNeo4jResponse = Neo4jPostImporter.AddNewPost(dbResponse.Result.Item2.Id.ToString());
+                    if (addPostNeo4jResponse.Result != "OK")
+                    {
+                        //Добавить удаление поста
+
+                        response.PostMessage = null;
+                        response.Code = 500;
+                        response.Message = addPostNeo4jResponse.Result;
                         return Task.FromResult(response);
                     }
                 }
