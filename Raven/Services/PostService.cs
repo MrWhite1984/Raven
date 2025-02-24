@@ -6,6 +6,7 @@ using Raven.DB.MinIO;
 using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.Entity;
 using Raven.DB.PSQL.Entity.@enum;
+using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 
@@ -140,6 +141,7 @@ namespace Raven.Services
                         );
                     if (createTagMessageResponse.IsCanceled)
                     {
+                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = createTagMessageResponse.Result.Item1;
@@ -147,6 +149,7 @@ namespace Raven.Services
                     }
                     else if (createTagMessageResponse.Result.Item2 == null)
                     {
+                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = createTagMessageResponse.Result.Item1;
@@ -175,6 +178,7 @@ namespace Raven.Services
                         );
                     if (addPostContentResponse.IsCanceled)
                     {
+                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = addPostContentResponse.Result.Item1;
@@ -182,6 +186,7 @@ namespace Raven.Services
                     }
                     else if (addPostContentResponse.Result.Item2 == null)
                     {
+                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = addPostContentResponse.Result.Item1;
@@ -190,8 +195,7 @@ namespace Raven.Services
                     var addPostNeo4jResponse = Neo4jPostImporter.AddNewPost(dbResponse.Result.Item2.Id.ToString());
                     if (addPostNeo4jResponse.Result != "OK")
                     {
-                        //Добавить удаление поста
-
+                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
                         response.PostMessage = null;
                         response.Code = 500;
                         response.Message = addPostNeo4jResponse.Result;

@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using Raven.DB.Neo4j.Importers;
+using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 
@@ -31,8 +32,7 @@ namespace Raven.Services
                 var neo4jResponse = Neo4jUserImporter.AddNewUser(dbResponse.Result.Item2.Id).Result;
                 if (neo4jResponse != "OK")
                 {
-                    //Надо удалять пользователя из psql
-
+                    UserDeleter.DeleteUser(dbResponse.Result.Item2.Id);
                     response.User = null;
                     response.Code = 500;
                     response.Message += neo4jResponse;
