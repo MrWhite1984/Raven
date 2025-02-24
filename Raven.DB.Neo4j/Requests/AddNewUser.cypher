@@ -1,0 +1,1 @@
+﻿CREATE (u:Users{UserId:$userId})

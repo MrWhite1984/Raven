@@ -46,6 +46,8 @@ services:
   ports:
    - "32778:8080"
    - "32779:8081"
+  volumes:
+  - ./Raven.DB.Neo4j/Requests:/app/CypherRequests
   depends_on:
    - postgres
    - minio

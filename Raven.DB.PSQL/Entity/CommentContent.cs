@@ -1,4 +1,4 @@
-﻿using Raven.Entity.@enum;
+﻿using Raven.DB.PSQL.Entity.@enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -26,5 +26,22 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 return (null, ex.Message);
             }
         }
+
+        public static async Task<(Tags, string)> GetTag(int id)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    Tags tags = await db.Tags.FindAsync(id);
+
+                    return (tags, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (null, ex.Message);
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 
@@ -27,6 +28,16 @@ namespace Raven.Services
             }
             else
             {
+                var neo4jResponse = Neo4jUserImporter.AddNewUser(dbResponse.Result.Item2.Id).Result;
+                if (neo4jResponse != "OK")
+                {
+                    //Надо удалять пользователя из psql
+
+                    response.User = null;
+                    response.Code = 500;
+                    response.Message += neo4jResponse;
+                    return Task.FromResult(response);
+                }
                 response.User = dbResponse.Result.Item2.Id;
                 response.Code = 200;
                 response.Message += dbResponse.Result.Item1;

@@ -197,6 +197,7 @@ message PostContentMessage
 	optional string content_id = 1;
 	string marker = 2;
 	ContentTypeEnum content_type_enum = 3;
+	bytes content = 4;
 }
 
 message GetPostsRequest
@@ -222,7 +223,7 @@ message CreatePostRequest
 }
 message CreatePostResponse
 {
-	PostMessage post = 1;
+	PostMessage post_message = 1;
 	uint32 code = 2;
 	string message = 3;
 }

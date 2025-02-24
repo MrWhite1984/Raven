@@ -1,9 +1,11 @@
 using Raven.DB.MinIO;
+using Raven.DB.Neo4j;
 using Raven.DB.PSQL;
 using Raven.Services;
 
 var minio = new MinioContext();
 minio.EnsureBucketsExist();
+Neo4jContext.InitRequests();
 
 var builder = WebApplication.CreateBuilder(args);
 

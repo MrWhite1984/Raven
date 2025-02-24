@@ -25,8 +25,7 @@ namespace Raven.DB.PSQL
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder
-                .UseNpgsql("Host=postgres;Port=5432;Database=TestDb;Username=admin;Password=p;")
-                .UseLazyLoadingProxies();
+                .UseNpgsql("Host=postgres;Port=5432;Database=TestDb;Username=admin;Password=p;Include Error Detail=true;");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -63,6 +62,10 @@ namespace Raven.DB.PSQL
                 .HasMany(o => o.PostContents)
                 .WithOne(o => o.Post)
                 .HasForeignKey(o => o.PostId);
+            modelBuilder.Entity<Posts>()
+                .HasOne(o => o.CategoryPost)
+                .WithMany(o => o.Posts)
+                .HasForeignKey(o => o.CategoryId);
             modelBuilder.Entity<PostContent>()
                 .HasOne(o => o.Post)
                 .WithMany(o => o.PostContents)

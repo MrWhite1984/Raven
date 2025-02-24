@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Raven.Entity.@enum
+namespace Raven.DB.PSQL.Entity.@enum
 {
     public enum ContentType
     {

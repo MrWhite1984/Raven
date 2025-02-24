@@ -27,5 +27,22 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 return (null, ex.Message);
             }
         }
+
+        public static async Task<(Categories, string)> GetCategory(int id)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    Categories category = await db.Categories.FindAsync(id);
+
+                    return (category, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (null, ex.Message);
+            }
+        }
     }
 }
