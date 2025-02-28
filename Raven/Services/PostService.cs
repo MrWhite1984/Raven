@@ -4,6 +4,8 @@ using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
 using Raven.DB.MinIO;
 using Raven.DB.Neo4j.Deleters;
+using Raven.DB.Neo4j.ExistChecker;
+using Raven.DB.Neo4j.Exporters;
 using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.Entity;
 using Raven.DB.PSQL.Entity.@enum;
@@ -376,6 +378,163 @@ namespace Raven.Services
                     }
                 }
             }
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
+
+        public override Task<GetPostsResponse> GetPosts(GetPostsRequest request, ServerCallContext context)
+        {
+            var response = new GetPostsResponse();
+            DateTime dateTimeCursor;
+            if(request.Cursor == null)
+            {
+                dateTimeCursor = DateTime.MaxValue;
+            }
+            else
+            {
+                dateTimeCursor = request.Cursor.ToDateTime();
+            }
+            var dbResponse = PostExporter.GetPosts(dateTimeCursor, (int)request.PageSize);
+            if (dbResponse.IsCanceled)
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else if (dbResponse.Result.Item2 != "OK")
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else
+            {
+                foreach(var post in dbResponse.Result.Item1)
+                {
+                    PostMessage postMessage = new PostMessage()
+                    {
+                        Id = post.Id.ToString(),
+                        Title = post.Title,
+                        Body = post.Body,
+                        CategoryMessage = new CategoryMessage()
+                        {
+                            Id = (uint)post.CategoryPost.Id,
+                            Title = post.CategoryPost.Title,
+                            ImageFile = post.CategoryPost.ImageFile.ToString(),
+                            Image = ByteString.CopyFrom(Exporter.GetCategoryImage(post.CategoryPost.ImageFile).Result.Item2)
+                        },
+                        LikesCount = (uint)post.LikesCount,
+                        ViewsCount = (uint)post.ViewsCount,
+                        BookmarksCount = (uint)post.BookmarksCount,
+                        CommentCount = (uint)post.CommentCount,
+                        AuthorId = post.AuthorId,
+                        CreatedAt = Timestamp.FromDateTime(post.CreatedAt),
+                        UpdatedAt = Timestamp.FromDateTimeOffset(post.UpdatedAt)
+                    };
+
+                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+
+                    if
+                        (
+                        neo4jLikeCheckerResponse.Item1 != "OK" ||
+                        neo4jViewCheckerResponse.Item1 != "OK" ||
+                        neo4jBookmarkCheckerResponse.Item1 != "OK"
+                        )
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = "Ошибка работы с Neo4j";
+                        return Task.FromResult(response);
+                    }
+
+                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                    var getTagsPostResponse = TagsPostExporter.GetTagsPost(post.Id);
+                    if (getTagsPostResponse.Result.Item2 != "OK")
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = getTagsPostResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    foreach ( var tagPost in getTagsPostResponse.Result.Item1)
+                    {
+                        postMessage.Tags.Add
+                            (
+                                new TagMessage()
+                                {
+                                    Id = (uint)tagPost.Tag.Id,
+                                    Name = tagPost.Tag.Name,
+                                }
+                            );
+                    }
+
+                    var getPostContentResponse = PostContentExporter.GetContentPost(post.Id);
+                    if (getPostContentResponse.Result.Item2 != "OK")
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = getPostContentResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    foreach(var content in getPostContentResponse.Result.Item1)
+                    {
+                        if (content.ContentType.Equals(ContentType.Image))
+                        {
+                            var postContentResponse = Exporter.GetPostImage(content.ContentId);
+                            if (postContentResponse.Result.Item1 != "OK")
+                            {
+                                response.NextCursor = request.Cursor;
+                                response.Code = 500;
+                                response.Message = postContentResponse.Result.Item1;
+                                return Task.FromResult(response);
+                            }
+                            postMessage.PostContentMessage.Add
+                                (
+                                    new PostContentMessage()
+                                    {
+                                        ContentId = content.ContentId.ToString(),
+                                        Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
+                                        Marker = content.Marker,
+                                        ContentTypeEnum = ContentTypeEnum.Image
+                                    }
+                                );
+                        }
+                        else
+                        {
+                            var postContentResponse = Exporter.GetPostVideos(content.ContentId);
+                            if (postContentResponse.Result.Item1 != "OK")
+                            {
+                                response.NextCursor = request.Cursor;
+                                response.Code = 500;
+                                response.Message = postContentResponse.Result.Item1;
+                                return Task.FromResult(response);
+                            }
+                            postMessage.PostContentMessage.Add
+                                (
+                                    new PostContentMessage()
+                                    {
+                                        ContentId = content.ContentId.ToString(),
+                                        Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
+                                        Marker = content.Marker,
+                                        ContentTypeEnum = ContentTypeEnum.Video
+                                    }
+                                );
+                        }
+                    }
+
+                    response.Entities.Add(postMessage);
+                }
+
+            }
+            response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
             response.Code = 200;
             response.Message = "OK";
             return Task.FromResult(response);

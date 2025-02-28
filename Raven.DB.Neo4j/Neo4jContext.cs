@@ -1,9 +1,4 @@
 ﻿using Neo4j.Driver;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Raven.DB.Neo4j
 {
@@ -25,8 +20,8 @@ namespace Raven.DB.Neo4j
             {
                 CypherQuerries.Add
                     (
-                    file.Substring(file.LastIndexOf('/') + 1, file.LastIndexOf('.') - file.LastIndexOf('/') - 1),
-                    File.ReadAllText(file)
+                        file.Substring(file.LastIndexOf('/') + 1, file.LastIndexOf('.') - file.LastIndexOf('/') - 1),
+                        File.ReadAllText(file)
                     );
             }
         }

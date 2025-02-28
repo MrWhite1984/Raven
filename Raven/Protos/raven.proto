@@ -195,14 +195,16 @@ message PostContentMessage
 
 message GetPostsRequest
 {
-	optional uint32 cursor = 1;
+	optional google.protobuf.Timestamp cursor = 1;
 	uint32 page_size = 2;
 	string user_id = 3;
 }
 message GetPostsResponse
 {
-	uint32 nextCursor = 1;
+	google.protobuf.Timestamp nextCursor = 1;
 	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
 }
 
 message CreatePostRequest
@@ -223,14 +225,16 @@ message CreatePostResponse
 
 message GetRecommendedPostsRequest
 {
-	optional uint32 cursor = 1;
+	optional google.protobuf.Timestamp cursor = 1;
 	uint32 page_size = 2;
 	string user_id = 3;
 }
 message GetRecommendedPostsResponse
 {
-	uint32 nextCursor = 1;
+	google.protobuf.Timestamp nextCursor = 1;
 	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
 }
 
 message UpdatePostRequest
@@ -251,14 +255,16 @@ message UpdatePostResoponse
 
 message GetUserPostsRequest
 {
-	optional uint32 cursor = 1;
+	optional google.protobuf.Timestamp cursor = 1;
 	uint32 page_size = 2;
 	string user_id = 3;
 }
 message GetUserPostsResponse
 {
-	uint32 nextCursor = 1;
+	google.protobuf.Timestamp nextCursor = 1;
 	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
 }
 
 message AddPostToBookmarksRequest

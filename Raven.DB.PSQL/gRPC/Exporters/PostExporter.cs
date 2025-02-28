@@ -32,5 +32,30 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 return (null, ex.Message);
             }
         }
+
+        public static async Task<(List<Posts>, string, DateTime)> GetPosts(DateTime cursor, int pageSize)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var posts = await db.Posts
+                        .Include(o => o.TagsPosts)
+                        .ThenInclude(o => o.Tag)
+                        .Include(o => o.PostContents)
+                        .Include(o => o.User)
+                        .Include(o => o.CategoryPost)
+                        .OrderByDescending(p => p.Id)
+                        .Where(o => o.CreatedAt <= cursor)
+                        .Take(pageSize+1)
+                        .ToListAsync();
+                    return (posts.Take(pageSize).ToList(), "OK", posts.Last().CreatedAt);
+                }
+            }
+            catch(Exception ex)
+            {
+                return (new List<Posts>(), ex.Message, DateTime.MinValue);
+            }
+        }
     }
 }
