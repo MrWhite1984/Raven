@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
 using Raven.DB.MinIO;
+using Raven.DB.Neo4j.Creator;
 using Raven.DB.Neo4j.Deleters;
 using Raven.DB.Neo4j.ExistChecker;
 using Raven.DB.Neo4j.Exporters;
@@ -259,6 +260,12 @@ namespace Raven.Services
                 response.Code = 500;
                 response.Message = neo4jResponse;
             }
+            var neo4jCreateRecommendationsResponse = Neo4jRecomendationRelationshipCreator.CreateNewRecomendations(request.UserId).Result;
+            if (neo4jCreateRecommendationsResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jCreateRecommendationsResponse;
+            }
             else
             {
                 response.Code = 200;
@@ -290,6 +297,13 @@ namespace Raven.Services
             {
                 response.Code = 500;
                 response.Message = neo4jResponse;
+            }
+            var neo4jRecommendedRelationshipDeleterResponse =
+                Neo4jRecommendedRelationshipDeleter.DeleteRelationship(request.UserId, request.PostId).Result;
+            if (neo4jRecommendedRelationshipDeleterResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jRecommendedRelationshipDeleterResponse;
             }
             else
             {
