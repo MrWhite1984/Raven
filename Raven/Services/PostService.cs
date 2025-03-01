@@ -553,6 +553,10 @@ namespace Raven.Services
             response.Message = "OK";
             return Task.FromResult(response);
         }
+        public override Task<GetRecommendedPostsResponse> GetRecommendedPosts(GetRecommendedPostsRequest request, ServerCallContext context)
+        {
+            return base.GetRecommendedPosts(request, context);
+        }
     }
 
 }
