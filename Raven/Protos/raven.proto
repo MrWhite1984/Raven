@@ -225,16 +225,14 @@ message CreatePostResponse
 
 message GetRecommendedPostsRequest
 {
-	optional google.protobuf.Timestamp cursor = 1;
-	uint32 page_size = 2;
-	string user_id = 3;
+	uint32 page_size = 1;
+	string user_id = 2;
 }
 message GetRecommendedPostsResponse
 {
-	google.protobuf.Timestamp nextCursor = 1;
-	repeated PostMessage entities = 2;
-	uint32 code = 3;
-	string message = 4;
+	repeated PostMessage entities = 1;
+	uint32 code = 2;
+	string message = 3;
 }
 
 message UpdatePostRequest

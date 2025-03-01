@@ -13,7 +13,7 @@ namespace Raven.DB.Neo4j.Exporters
         {
             try
             {
-                List<IRelationship> nodes = new List<IRelationship>();
+                List<IRelationship> relationships = new List<IRelationship>();
                 using (var session = new Neo4jContext().driver.AsyncSession())
                 {
                     var result = await session.RunAsync(Neo4jContext.CypherQuerries["GetPostLikeRelationship"], new
@@ -23,7 +23,7 @@ namespace Raven.DB.Neo4j.Exporters
                     });
                     await foreach (var record in result)
                     {
-                        nodes.Add(record["r"].As<IRelationship>());
+                        relationships.Add(record["r"].As<IRelationship>());
                     }
                 }
                 

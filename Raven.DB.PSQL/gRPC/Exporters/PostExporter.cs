@@ -45,7 +45,7 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                         .Include(o => o.PostContents)
                         .Include(o => o.User)
                         .Include(o => o.CategoryPost)
-                        .OrderByDescending(p => p.Id)
+                        .OrderByDescending(p => p.CreatedAt)
                         .Where(o => o.CreatedAt <= cursor)
                         .Take(pageSize+1)
                         .ToListAsync();
@@ -55,6 +55,30 @@ namespace Raven.DB.PSQL.gRPC.Exporters
             catch(Exception ex)
             {
                 return (new List<Posts>(), ex.Message, DateTime.MinValue);
+            }
+        }
+
+        public static async Task<(List<Posts>, string)> GetPostsByIdsList(List<string> ids)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var posts = await db.Posts
+                        .Include(o => o.TagsPosts)
+                        .ThenInclude(o => o.Tag)
+                        .Include(o => o.PostContents)
+                        .Include(o => o.User)
+                        .Include(o => o.CategoryPost)
+                        .OrderByDescending(p => p.CreatedAt)
+                        .Where(o => ids.Contains(o.Id.ToString()))
+                        .ToListAsync();
+                    return (posts, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (new List<Posts>(), ex.Message);
             }
         }
     }

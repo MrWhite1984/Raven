@@ -1,0 +1,65 @@
+﻿using Neo4j.Driver;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Raven.DB.Neo4j.Exporters
+{
+    public class Neo4jPostExporter
+    {
+        public async static Task<(string, List<string>)> GetRecommendedPosts(string userId, int pageSize)
+        {
+            try
+            {
+                List<string> postIds = new List<string>();
+                using (var session = new Neo4jContext().driver.AsyncSession())
+                {
+                    var response = await session.RunAsync(Neo4jContext.CypherQuerries["GetRecommendedPosts"], new
+                    {
+                        userId = userId,
+                        pageSize = pageSize
+                    });
+                    var result = await response.ToListAsync();
+                    foreach (var record in result)
+                    {
+                        postIds.Add(record["uniquePosts"].As<INode>().Properties["PostId"].ToString());
+                    }
+                }
+
+                return ("OK", postIds);
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message, new List<string>());
+            }
+        }
+        public async static Task<(string, List<string>)> GetUnviewedPosts(string userId, int pageSize)
+        {
+            try
+            {
+                List<string> postIds = new List<string>();
+                using (var session = new Neo4jContext().driver.AsyncSession())
+                {
+                    var response = await session.RunAsync(Neo4jContext.CypherQuerries["GetUnviewedPosts"], new
+                    {
+                        userId = userId,
+                        pageSize = pageSize
+                    });
+                    var result = await response.ToListAsync();
+                    foreach (var record in result)
+                    {
+                        postIds.Add(record["uniquePosts"].As<INode>().Properties["PostId"].ToString());
+                    }
+                }
+
+                return ("OK", postIds);
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message, new List<string>());
+            }
+        }
+    }
+}

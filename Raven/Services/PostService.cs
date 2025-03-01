@@ -428,26 +428,14 @@ namespace Raven.Services
             {
                 foreach(var post in dbResponse.Result.Item1)
                 {
-                    PostMessage postMessage = new PostMessage()
+                    var createPostMessageResponse = CreatePostMessage(post);
+                    if (createPostMessageResponse.Result.Item2 != "OK")
                     {
-                        Id = post.Id.ToString(),
-                        Title = post.Title,
-                        Body = post.Body,
-                        CategoryMessage = new CategoryMessage()
-                        {
-                            Id = (uint)post.CategoryPost.Id,
-                            Title = post.CategoryPost.Title,
-                            ImageFile = post.CategoryPost.ImageFile.ToString(),
-                            Image = ByteString.CopyFrom(Exporter.GetCategoryImage(post.CategoryPost.ImageFile).Result.Item2)
-                        },
-                        LikesCount = (uint)post.LikesCount,
-                        ViewsCount = (uint)post.ViewsCount,
-                        BookmarksCount = (uint)post.BookmarksCount,
-                        CommentCount = (uint)post.CommentCount,
-                        AuthorId = post.AuthorId,
-                        CreatedAt = Timestamp.FromDateTime(post.CreatedAt),
-                        UpdatedAt = Timestamp.FromDateTimeOffset(post.UpdatedAt)
-                    };
+                        response.Code = 500;
+                        response.Message = createPostMessageResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    var postMessage = createPostMessageResponse.Result.Item1;
 
                     var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
                     var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
@@ -470,80 +458,6 @@ namespace Raven.Services
                     postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
                     postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
 
-                    var getTagsPostResponse = TagsPostExporter.GetTagsPost(post.Id);
-                    if (getTagsPostResponse.Result.Item2 != "OK")
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = getTagsPostResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    foreach ( var tagPost in getTagsPostResponse.Result.Item1)
-                    {
-                        postMessage.Tags.Add
-                            (
-                                new TagMessage()
-                                {
-                                    Id = (uint)tagPost.Tag.Id,
-                                    Name = tagPost.Tag.Name,
-                                }
-                            );
-                    }
-
-                    var getPostContentResponse = PostContentExporter.GetContentPost(post.Id);
-                    if (getPostContentResponse.Result.Item2 != "OK")
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = getPostContentResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    foreach(var content in getPostContentResponse.Result.Item1)
-                    {
-                        if (content.ContentType.Equals(ContentType.Image))
-                        {
-                            var postContentResponse = Exporter.GetPostImage(content.ContentId);
-                            if (postContentResponse.Result.Item1 != "OK")
-                            {
-                                response.NextCursor = request.Cursor;
-                                response.Code = 500;
-                                response.Message = postContentResponse.Result.Item1;
-                                return Task.FromResult(response);
-                            }
-                            postMessage.PostContentMessage.Add
-                                (
-                                    new PostContentMessage()
-                                    {
-                                        ContentId = content.ContentId.ToString(),
-                                        Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
-                                        Marker = content.Marker,
-                                        ContentTypeEnum = ContentTypeEnum.Image
-                                    }
-                                );
-                        }
-                        else
-                        {
-                            var postContentResponse = Exporter.GetPostVideos(content.ContentId);
-                            if (postContentResponse.Result.Item1 != "OK")
-                            {
-                                response.NextCursor = request.Cursor;
-                                response.Code = 500;
-                                response.Message = postContentResponse.Result.Item1;
-                                return Task.FromResult(response);
-                            }
-                            postMessage.PostContentMessage.Add
-                                (
-                                    new PostContentMessage()
-                                    {
-                                        ContentId = content.ContentId.ToString(),
-                                        Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
-                                        Marker = content.Marker,
-                                        ContentTypeEnum = ContentTypeEnum.Video
-                                    }
-                                );
-                        }
-                    }
-
                     response.Entities.Add(postMessage);
                 }
 
@@ -555,7 +469,132 @@ namespace Raven.Services
         }
         public override Task<GetRecommendedPostsResponse> GetRecommendedPosts(GetRecommendedPostsRequest request, ServerCallContext context)
         {
-            return base.GetRecommendedPosts(request, context);
+            var response = new GetRecommendedPostsResponse();
+            var neo4jGetRecommendedPostResponse = Neo4jPostExporter.GetRecommendedPosts(request.UserId, (int)request.PageSize);
+            if(neo4jGetRecommendedPostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jGetRecommendedPostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var dbResponse = PostExporter.GetPostsByIdsList(neo4jGetRecommendedPostResponse.Result.Item2);
+            if(dbResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            response.Code = 200;
+            foreach(var post in dbResponse.Result.Item1)
+            {
+                var createPostMessageResponse = CreatePostMessage(post);
+                if(createPostMessageResponse.Result.Item2 != "OK")
+                {
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    return Task.FromResult(response);
+                }
+                response.Entities.Add(createPostMessageResponse.Result.Item1);
+            }
+            return Task.FromResult(response);
+        }
+
+
+
+
+
+        public async static Task<(PostMessage, string)> CreatePostMessage(Posts post)
+        {
+            (PostMessage, string) response = (null, "");
+            var postMessage = new PostMessage()
+            {
+                Id = post.Id.ToString(),
+                Title = post.Title,
+                Body = post.Body,
+                CategoryMessage = new CategoryMessage()
+                {
+                    Id = (uint)post.CategoryPost.Id,
+                    Title = post.CategoryPost.Title,
+                    ImageFile = post.CategoryPost.ImageFile.ToString(),
+                    Image = ByteString.CopyFrom(Exporter.GetCategoryImage(post.CategoryPost.ImageFile).Result.Item2)
+                },
+                LikesCount = (uint)post.LikesCount,
+                ViewsCount = (uint)post.ViewsCount,
+                BookmarksCount = (uint)post.BookmarksCount,
+                CommentCount = (uint)post.CommentCount,
+                AuthorId = post.AuthorId,
+                CreatedAt = Timestamp.FromDateTime(post.CreatedAt),
+                UpdatedAt = Timestamp.FromDateTimeOffset(post.UpdatedAt)
+            };
+
+            var getTagsPostResponse = TagsPostExporter.GetTagsPost(post.Id);
+            if (getTagsPostResponse.Result.Item2 != "OK")
+            {
+                response.Item2 = getTagsPostResponse.Result.Item2;
+                return response;
+            }
+            foreach (var tagPost in getTagsPostResponse.Result.Item1)
+            {
+                postMessage.Tags.Add
+                    (
+                        new TagMessage()
+                        {
+                            Id = (uint)tagPost.Tag.Id,
+                            Name = tagPost.Tag.Name,
+                        }
+                    );
+            }
+
+            var getPostContentResponse = PostContentExporter.GetContentPost(post.Id);
+            if (getPostContentResponse.Result.Item2 != "OK")
+            {
+                response.Item2 = getPostContentResponse.Result.Item2;
+                return response;
+            }
+            foreach (var content in getPostContentResponse.Result.Item1)
+            {
+                if (content.ContentType.Equals(ContentType.Image))
+                {
+                    var postContentResponse = Exporter.GetPostImage(content.ContentId);
+                    if (postContentResponse.Result.Item1 != "OK")
+                    {
+                        response.Item2 = postContentResponse.Result.Item1;
+                        return response;
+                    }
+                    postMessage.PostContentMessage.Add
+                        (
+                            new PostContentMessage()
+                            {
+                                ContentId = content.ContentId.ToString(),
+                                Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
+                                Marker = content.Marker,
+                                ContentTypeEnum = ContentTypeEnum.Image
+                            }
+                        );
+                }
+                else
+                {
+                    var postContentResponse = Exporter.GetPostVideos(content.ContentId);
+                    if (postContentResponse.Result.Item1 != "OK")
+                    {
+                        response.Item2 = postContentResponse.Result.Item1;
+                        return response;
+                    }
+                    postMessage.PostContentMessage.Add
+                        (
+                            new PostContentMessage()
+                            {
+                                ContentId = content.ContentId.ToString(),
+                                Content = ByteString.CopyFrom(postContentResponse.Result.Item2),
+                                Marker = content.Marker,
+                                ContentTypeEnum = ContentTypeEnum.Video
+                            }
+                        );
+                }
+            }
+            response.Item1 = postMessage;
+            response.Item2 = "OK";
+            return response;
         }
     }
 
