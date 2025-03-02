@@ -2,6 +2,7 @@
 using Raven.DB.PSQL.Entity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -82,7 +83,8 @@ namespace Raven.DB.PSQL.gRPC.Exporters
             }
         }
 
-        public static async Task<(List<Posts>, string, DateTime)> GetPostsByUser(DateTime cursor, int pageSize, string userId)
+        public static async Task<(List<Posts>, string, DateTime)> GetPostsByUser
+            (DateTime cursor, int pageSize, string userId)
         {
             try
             {
@@ -96,6 +98,62 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                         .Include(o => o.CategoryPost)
                         .OrderByDescending(p => p.CreatedAt)
                         .Where(o => o.CreatedAt <= cursor && o.AuthorId == userId)
+                        .Take(pageSize + 1)
+                        .ToListAsync();
+                    return (posts.Take(pageSize).ToList(), "OK", posts.Last().CreatedAt);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (new List<Posts>(), ex.Message, DateTime.MinValue);
+            }
+        }
+
+        public static async Task<(List<Posts>, string, DateTime)> GetPostsByCategoryId
+            (DateTime cursor, int pageSize, int categoryId)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var posts = await db.Posts
+                        .Include(o => o.TagsPosts)
+                        .ThenInclude(o => o.Tag)
+                        .Include(o => o.PostContents)
+                        .Include(o => o.User)
+                        .Include(o => o.CategoryPost)
+                        .OrderByDescending(p => p.CreatedAt)
+                        .Where(o => o.CreatedAt <= cursor && o.CategoryId == categoryId)
+                        .Take(pageSize + 1)
+                        .ToListAsync();
+                    return (posts.Take(pageSize).ToList(), "OK", posts.Last().CreatedAt);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (new List<Posts>(), ex.Message, DateTime.MinValue);
+            }
+        }
+
+        public static async Task<(List<Posts>, string, DateTime)> GetPostsByTagsId
+            (DateTime cursor, int pageSize, List<int> tagsId)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var postsId = await db.TagsPosts
+                        .Where(o => tagsId.Contains(o.TagId))
+                        .Select(o => o.PostId)
+                        .ToListAsync();
+                    var posts = await db.Posts
+                        .Include(o => o.TagsPosts)
+                        .ThenInclude(o => o.Tag)
+                        .Include(o => o.PostContents)
+                        .Include(o => o.User)
+                        .Include(o => o.CategoryPost)
+                        .OrderByDescending(p => p.CreatedAt)
+                        .Where(o => o.CreatedAt <= cursor && postsId.Contains(o.Id))
                         .Take(pageSize + 1)
                         .ToListAsync();
                     return (posts.Take(pageSize).ToList(), "OK", posts.Last().CreatedAt);

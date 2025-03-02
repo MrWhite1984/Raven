@@ -153,6 +153,8 @@ service PostHandler
 	rpc GetRecommendedPosts(GetRecommendedPostsRequest) returns (GetRecommendedPostsResponse);
 	rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
 	rpc GetBookmarkedPosts(GetBookmarkedPostsRequest) returns (GetBookmarkedPostsResponse);
+	rpc GetPostsByCategory(GetPostsByCategoryRequest) returns (GetPostsByCategoryResponse);
+	rpc GetPostsByTags(GetPostsByTagsRequest) returns (GetPostsByTagsResponse);
 	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
 	rpc UpdateBodyPost(UpdateBodyPostRequest) returns (UpdateBodyPostResoponse);
 	rpc AddPostToBookmarks(AddPostToBookmarksRequest) returns (AddPostToBookmarksResponse);
@@ -192,6 +194,36 @@ message PostContentMessage
 	string marker = 2;
 	ContentTypeEnum content_type_enum = 3;
 	bytes content = 4;
+}
+
+message GetPostsByTagsRequest
+{
+	optional google.protobuf.Timestamp cursor = 1;
+	uint32 page_size = 2;
+	repeated uint32 tag_ids = 3;
+	string user_id = 4;
+}
+message GetPostsByTagsResponse
+{
+	google.protobuf.Timestamp nextCursor = 1;
+	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
+}
+
+message GetPostsByCategoryRequest
+{
+	optional google.protobuf.Timestamp cursor = 1;
+	uint32 page_size = 2;
+	uint32 category_id = 3;
+	string user_id = 4;
+}
+message GetPostsByCategoryResponse
+{
+	google.protobuf.Timestamp nextCursor = 1;
+	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
 }
 
 message GetBookmarkedPostsRequest

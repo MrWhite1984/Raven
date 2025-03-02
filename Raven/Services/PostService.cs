@@ -664,6 +664,148 @@ namespace Raven.Services
             return Task.FromResult(response);
         }
 
+        public override Task<GetPostsByCategoryResponse> GetPostsByCategory(GetPostsByCategoryRequest request, ServerCallContext context)
+        {
+            var response = new GetPostsByCategoryResponse();
+            DateTime dateTimeCursor;
+            if (request.Cursor == null)
+            {
+                dateTimeCursor = DateTime.MaxValue;
+            }
+            else
+            {
+                dateTimeCursor = request.Cursor.ToDateTime();
+            }
+            var dbResponse = PostExporter.GetPostsByCategoryId(dateTimeCursor, (int)request.PageSize, (int)request.CategoryId);
+            if (dbResponse.IsCanceled)
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else if (dbResponse.Result.Item2 != "OK")
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else
+            {
+                foreach (var post in dbResponse.Result.Item1)
+                {
+                    var createPostMessageResponse = CreatePostMessage(post);
+                    if (createPostMessageResponse.Result.Item2 != "OK")
+                    {
+                        response.Code = 500;
+                        response.Message = createPostMessageResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    var postMessage = createPostMessageResponse.Result.Item1;
+
+                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+
+                    if
+                        (
+                        neo4jLikeCheckerResponse.Item1 != "OK" ||
+                        neo4jViewCheckerResponse.Item1 != "OK" ||
+                        neo4jBookmarkCheckerResponse.Item1 != "OK"
+                        )
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = "Ошибка работы с Neo4j";
+                        return Task.FromResult(response);
+                    }
+
+                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                    response.Entities.Add(postMessage);
+                }
+
+            }
+            response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
+
+        public override Task<GetPostsByTagsResponse> GetPostsByTags(GetPostsByTagsRequest request, ServerCallContext context)
+        {
+            var response = new GetPostsByTagsResponse();
+            DateTime dateTimeCursor;
+            if (request.Cursor == null)
+            {
+                dateTimeCursor = DateTime.MaxValue;
+            }
+            else
+            {
+                dateTimeCursor = request.Cursor.ToDateTime();
+            }
+            var dbResponse = PostExporter.GetPostsByTagsId(dateTimeCursor, (int)request.PageSize, request.TagIds.ToList().ConvertAll(o=> (int)o));
+            if (dbResponse.IsCanceled)
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else if (dbResponse.Result.Item2 != "OK")
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else
+            {
+                foreach (var post in dbResponse.Result.Item1)
+                {
+                    var createPostMessageResponse = CreatePostMessage(post);
+                    if (createPostMessageResponse.Result.Item2 != "OK")
+                    {
+                        response.Code = 500;
+                        response.Message = createPostMessageResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    var postMessage = createPostMessageResponse.Result.Item1;
+
+                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+
+                    if
+                        (
+                        neo4jLikeCheckerResponse.Item1 != "OK" ||
+                        neo4jViewCheckerResponse.Item1 != "OK" ||
+                        neo4jBookmarkCheckerResponse.Item1 != "OK"
+                        )
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = "Ошибка работы с Neo4j";
+                        return Task.FromResult(response);
+                    }
+
+                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                    response.Entities.Add(postMessage);
+                }
+
+            }
+            response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
+
         public async static Task<(PostMessage, string)> CreatePostMessage(Posts post)
         {
             (PostMessage, string) response = (null, "");
