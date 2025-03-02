@@ -468,6 +468,7 @@ namespace Raven.Services
             response.Message = "OK";
             return Task.FromResult(response);
         }
+
         public override Task<GetRecommendedPostsResponse> GetRecommendedPosts(GetRecommendedPostsRequest request, ServerCallContext context)
         {
             var response = new GetRecommendedPostsResponse();
@@ -500,6 +501,7 @@ namespace Raven.Services
             response.Message = "OK";
             return Task.FromResult(response);
         }
+
         public override Task<GetUserPostsResponse> GetUserPosts(GetUserPostsRequest request, ServerCallContext context)
         {
             var response = new GetUserPostsResponse();
@@ -571,6 +573,7 @@ namespace Raven.Services
             return Task.FromResult(response);
 
         }
+
         public override Task<GetBookmarkedPostsResponse> GetBookmarkedPosts(GetBookmarkedPostsRequest request, ServerCallContext context)
         {
             var response = new GetBookmarkedPostsResponse();
@@ -622,7 +625,44 @@ namespace Raven.Services
             return Task.FromResult(response);
         }
 
-
+        public override Task<UpdateBodyPostResoponse> UpdateBodyPost(UpdateBodyPostRequest request, ServerCallContext context)
+        {
+            var response = new UpdateBodyPostResoponse();
+            var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
+            if (getPostResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getPostResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            var post = getPostResponse.Result.Item1;
+            post.Body = request.Body;
+            post.UpdatedAt = DateTime.UtcNow; 
+            var dbResponse = PostUpdater.UpdatePost(post);
+            if (dbResponse.IsCanceled)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            else if (dbResponse.Result.Item2 == null)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var createPostMessageResponse = CreatePostMessage(post);
+            if (createPostMessageResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = createPostMessageResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            response.Post = createPostMessageResponse.Result.Item1;
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
 
         public async static Task<(PostMessage, string)> CreatePostMessage(Posts post)
         {

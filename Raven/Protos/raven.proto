@@ -154,7 +154,7 @@ service PostHandler
 	rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
 	rpc GetBookmarkedPosts(GetBookmarkedPostsRequest) returns (GetBookmarkedPostsResponse);
 	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
-	rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResoponse);
+	rpc UpdateBodyPost(UpdateBodyPostRequest) returns (UpdateBodyPostResoponse);
 	rpc AddPostToBookmarks(AddPostToBookmarksRequest) returns (AddPostToBookmarksResponse);
 	rpc AddPostToViews(AddPostToViewsRequest) returns (AddPostToViewsResponse);
 	rpc AddPostToLiked(AddPostToLikedRequest) returns (AddPostToLikedResponse);
@@ -250,16 +250,12 @@ message GetRecommendedPostsResponse
 	string message = 3;
 }
 
-message UpdatePostRequest
+message UpdateBodyPostRequest
 {
 	string post_id = 1;
-	string title = 2;
 	string body = 3;
-	uint32 category_id = 4;
-	string author_id = 5;
-	repeated PostContentMessage post_content_message = 6;
 }
-message UpdatePostResoponse
+message UpdateBodyPostResoponse
 {
 	PostMessage post = 1;
 	uint32 code = 2;
