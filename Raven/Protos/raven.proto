@@ -150,10 +150,11 @@ message DeleteTagResponse
 service PostHandler
 {
 	rpc GetPosts(GetPostsRequest) returns (GetPostsResponse);
-	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
 	rpc GetRecommendedPosts(GetRecommendedPostsRequest) returns (GetRecommendedPostsResponse);
-	rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResoponse);
 	rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
+	rpc GetBookmarkedPosts(GetBookmarkedPostsRequest) returns (GetBookmarkedPostsResponse);
+	rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+	rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResoponse);
 	rpc AddPostToBookmarks(AddPostToBookmarksRequest) returns (AddPostToBookmarksResponse);
 	rpc AddPostToViews(AddPostToViewsRequest) returns (AddPostToViewsResponse);
 	rpc AddPostToLiked(AddPostToLikedRequest) returns (AddPostToLikedResponse);
@@ -191,6 +192,20 @@ message PostContentMessage
 	string marker = 2;
 	ContentTypeEnum content_type_enum = 3;
 	bytes content = 4;
+}
+
+message GetBookmarkedPostsRequest
+{
+	optional google.protobuf.Timestamp cursor = 1;
+	uint32 page_size = 2;
+	string user_id = 3;
+}
+message GetBookmarkedPostsResponse
+{
+	google.protobuf.Timestamp nextCursor = 1;
+	repeated PostMessage entities = 2;
+	uint32 code = 3;
+	string message = 4;
 }
 
 message GetPostsRequest

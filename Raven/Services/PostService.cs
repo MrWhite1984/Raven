@@ -14,6 +14,7 @@ using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 using Raven.DB.PSQL.gRPC.Updaters;
+using System.Collections.Immutable;
 
 namespace Raven.Services
 {
@@ -496,10 +497,130 @@ namespace Raven.Services
                 }
                 response.Entities.Add(createPostMessageResponse.Result.Item1);
             }
+            response.Message = "OK";
             return Task.FromResult(response);
         }
+        public override Task<GetUserPostsResponse> GetUserPosts(GetUserPostsRequest request, ServerCallContext context)
+        {
+            var response = new GetUserPostsResponse();
+            DateTime dateTimeCursor;
+            if (request.Cursor == null)
+            {
+                dateTimeCursor = DateTime.MaxValue;
+            }
+            else
+            {
+                dateTimeCursor = request.Cursor.ToDateTime();
+            }
+            var dbResponse = PostExporter.GetPostsByUser(dateTimeCursor, (int)request.PageSize, request.UserId);
+            if (dbResponse.IsCanceled)
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else if (dbResponse.Result.Item2 != "OK")
+            {
+                response.NextCursor = request.Cursor;
+                response.Entities.Add(new List<PostMessage>());
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+            }
+            else
+            {
+                foreach (var post in dbResponse.Result.Item1)
+                {
+                    var createPostMessageResponse = CreatePostMessage(post);
+                    if (createPostMessageResponse.Result.Item2 != "OK")
+                    {
+                        response.Code = 500;
+                        response.Message = createPostMessageResponse.Result.Item2;
+                        return Task.FromResult(response);
+                    }
+                    var postMessage = createPostMessageResponse.Result.Item1;
 
+                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
 
+                    if
+                        (
+                        neo4jLikeCheckerResponse.Item1 != "OK" ||
+                        neo4jViewCheckerResponse.Item1 != "OK" ||
+                        neo4jBookmarkCheckerResponse.Item1 != "OK"
+                        )
+                    {
+                        response.NextCursor = request.Cursor;
+                        response.Code = 500;
+                        response.Message = "Ошибка работы с Neo4j";
+                        return Task.FromResult(response);
+                    }
+
+                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                    response.Entities.Add(postMessage);
+                }
+
+            }
+            response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+
+        }
+        public override Task<GetBookmarkedPostsResponse> GetBookmarkedPosts(GetBookmarkedPostsRequest request, ServerCallContext context)
+        {
+            var response = new GetBookmarkedPostsResponse();
+            DateTime dateTimeCursor;
+            if (request.Cursor == null)
+            {
+                dateTimeCursor = DateTime.UtcNow;
+            }
+            else
+            {
+                dateTimeCursor = request.Cursor.ToDateTime();
+            }
+            var neo4jGetBookmarkedPostsPostResponse = Neo4jPostExporter.GetBookmarkedPosts(
+                request.UserId, 
+                (int)request.PageSize+1,
+                dateTimeCursor
+                );
+            if (neo4jGetBookmarkedPostsPostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jGetBookmarkedPostsPostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var dbResponse = PostExporter
+                .GetPostsByIdsList(neo4jGetBookmarkedPostsPostResponse.Result.Item2
+                    .Take((int)request.PageSize).ToList()
+                );
+            if (dbResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            response.Code = 200;
+            foreach (var post in dbResponse.Result.Item1)
+            {
+                var createPostMessageResponse = CreatePostMessage(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
+                {
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    return Task.FromResult(response);
+                }
+                response.Entities.Add(createPostMessageResponse.Result.Item1);
+            }
+            response.Message = "OK";
+            response.NextCursor = Timestamp
+                .FromDateTime(neo4jGetBookmarkedPostsPostResponse.Result.Item3);
+            return Task.FromResult(response);
+        }
 
 
 
