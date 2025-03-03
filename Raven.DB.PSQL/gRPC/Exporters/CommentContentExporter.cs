@@ -8,24 +8,24 @@ using System.Threading.Tasks;
 
 namespace Raven.DB.PSQL.gRPC.Exporters
 {
-    public class PostContentExporter
+    public class CommentContentExporter
     {
-        public static async Task<(List<PostContent>, string)> GetContentPost(Guid postId)
+        public static async Task<(List<CommentContent>, string)> GetContentComment(Guid commentId)
         {
             try
             {
                 using (var db = new AppDbContext())
                 {
-                    var postContents = db.PostContents
-                        .Where(o => o.PostId == postId)
+                    var commentContents = db.CommentContent
+                        .Where(o => o.CommentId == commentId)
                         .ToListAsync();
 
-                    return (postContents.Result, "OK");
+                    return (commentContents.Result, "OK");
                 }
             }
             catch (Exception ex)
             {
-                return (new List<PostContent>(), ex.Message);
+                return (new List<CommentContent>(), ex.Message);
             }
         }
     }

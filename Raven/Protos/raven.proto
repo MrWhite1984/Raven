@@ -413,26 +413,24 @@ message CreateCommentToCommentResponse
 
 message GetCommentsToPostRequest
 {
-	optional uint32 cursor = 1;
-	uint32 page_size = 2;
-	string post_id = 3;
+	string post_id = 1;
 }
 message GetCommentsToPostResponse
 {
-	uint32 nextCursor = 1;
-	repeated CommentMessage entities = 2;
+	repeated CommentMessage entities = 1;
+	uint32 code = 2;
+	string message = 3;
 }
 
 message GetCommentsToCommentRequest
 {
-	optional uint32 cursor = 1;
-	uint32 page_size = 2;
-	string comment_id = 3;
+	string comment_id = 1;
 }
 message GetCommentsToCommentResponse
 {
-	uint32 nextCursor = 1;
-	repeated CommentMessage entities = 2;
+	repeated CommentMessage entities = 1;
+	uint32 code = 2;
+	string message = 3;
 }
 
 message UpdateCommentRequest

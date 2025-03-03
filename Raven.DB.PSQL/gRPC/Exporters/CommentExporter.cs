@@ -28,5 +28,25 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 return (null, ex.Message);
             }
         }
+
+        public static async Task<(List<Comments>, string)> GetCommentsByIdsList(List<string> ids)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    var posts = await db.Comments
+                        .Include(o => o.CommentContents)
+                        .Include(o => o.User)
+                        .Where(o => ids.Contains(o.Id.ToString()))
+                        .ToListAsync();
+                    return (posts, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (new List<Comments>(), ex.Message);
+            }
+        }
     }
 }

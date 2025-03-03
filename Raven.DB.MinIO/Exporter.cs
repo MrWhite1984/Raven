@@ -80,5 +80,53 @@ namespace Raven.DB.MinIO
                 return (ex.Message, null);
             }
         }
+
+        public async static Task<(string, byte[])> GetCommentImage(Guid guid)
+        {
+            try
+            {
+                using var memoryStream = new MemoryStream();
+                var getObjectArgs = new GetObjectArgs()
+                    .WithBucket("comment-images")
+                    .WithObject(guid.ToString())
+                    .WithCallbackStream(
+                        async (stream) =>
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            memoryStream.Position = 0;
+                        }
+                    );
+                await new MinioContext().minioClient.GetObjectAsync(getObjectArgs);
+                return ("OK", memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message, null);
+            }
+        }
+
+        public async static Task<(string, byte[])> GetCommentVideos(Guid guid)
+        {
+            try
+            {
+                using var memoryStream = new MemoryStream();
+                var getObjectArgs = new GetObjectArgs()
+                    .WithBucket("comment-videos")
+                    .WithObject(guid.ToString())
+                    .WithCallbackStream(
+                        async (stream) =>
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            memoryStream.Position = 0;
+                        }
+                    );
+                await new MinioContext().minioClient.GetObjectAsync(getObjectArgs);
+                return ("OK", memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message, null);
+            }
+        }
     }
 }
