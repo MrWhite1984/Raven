@@ -395,7 +395,81 @@ namespace Raven.Services
             return Task.FromResult(response);
         }
 
+        public override Task<UpdateCommentResponse> UpdateComment(UpdateCommentRequest request, ServerCallContext context)
+        {
+            var response = new UpdateCommentResponse();
+            var getCommentResponse = CommentExporter.GetComment(Guid.Parse(request.CommentId));
+            if (getCommentResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getCommentResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            var comment = getCommentResponse.Result.Item1;
+            comment.Body = request.Body;
+            comment.UpdatedAt = DateTime.UtcNow;
+            var dbResponse = CommentUpdater.UpdateComment(comment);
+            if (dbResponse.IsCanceled)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            else if (dbResponse.Result.Item2 == null)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var createPostMessageResponse = CreateCommentMessage(comment);
+            if (createPostMessageResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = createPostMessageResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            response.Comment = createPostMessageResponse.Result.Item1;
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
 
+        public override Task<DeleteCommentResponse> DeleteComment(DeleteCommentRequest request, ServerCallContext context)
+        {
+            var response = new DeleteCommentResponse();
+            var getCommentResponse = CommentExporter.GetComment(Guid.Parse(request.CommentId));
+            if (getCommentResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getCommentResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            var comment = getCommentResponse.Result.Item1;
+            comment.IsRemoved = true;
+            var dbResponse = CommentUpdater.UpdateComment(comment);
+            if (dbResponse.IsCanceled)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            else if (dbResponse.Result.Item2 == null)
+            {
+                response.Code = 500;
+                response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var createPostMessageResponse = CreateCommentMessage(comment);
+            if (createPostMessageResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = createPostMessageResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            response.Code = 200;
+            response.Message = "OK";
+            return Task.FromResult(response);
+        }
 
         public async static Task<(CommentMessage, string)> CreateCommentMessage(Comments comment)
         {
