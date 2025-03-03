@@ -406,7 +406,7 @@ message CreateCommentToCommentRequest
 }
 message CreateCommentToCommentResponse
 {
-	CommentMessage comment = 1;
+	CommentMessage comment_message = 1;
 	uint32 code = 2;
 	string message = 3;
 }
