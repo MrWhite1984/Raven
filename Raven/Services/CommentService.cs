@@ -2,6 +2,7 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Raven.DB.MinIO;
+using Raven.DB.Neo4j.Creator;
 using Raven.DB.Neo4j.Exporters;
 using Raven.DB.Neo4j.Importers;
 using Raven.DB.PSQL.Entity;
@@ -468,6 +469,38 @@ namespace Raven.Services
             }
             response.Code = 200;
             response.Message = "OK";
+            return Task.FromResult(response);
+        }
+
+        public override Task<LikeCommentResponse> LikeComment(LikeCommentRequest request, ServerCallContext context)
+        {
+            var response = new LikeCommentResponse();
+            var getCommentResponse = CommentExporter.GetComment(Guid.Parse(request.CommentId));
+            if (getCommentResponse.Result.Item2 != "OK")
+            {
+                response.Code = 500;
+                response.Message = getCommentResponse.Result.Item2;
+                return Task.FromResult(response);
+            }
+            getCommentResponse.Result.Item1.LikesCount++;
+            var updatePostResponse = CommentUpdater.UpdateComment(getCommentResponse.Result.Item1);
+            if (updatePostResponse.Result.Item1 != "OK")
+            {
+                response.Code = 500;
+                response.Message = updatePostResponse.Result.Item1;
+                return Task.FromResult(response);
+            }
+            var neo4jResponse = Neo4jRelationshipImporter.AddCommentLikeRelationship(request.UserId, request.CommentId).Result;
+            if (neo4jResponse != "OK")
+            {
+                response.Code = 500;
+                response.Message = neo4jResponse;
+            }
+            else
+            {
+                response.Code = 200;
+                response.Message = neo4jResponse;
+            }
             return Task.FromResult(response);
         }
 

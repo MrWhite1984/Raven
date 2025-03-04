@@ -361,6 +361,7 @@ service CommentHandler
 	rpc GetCommentsToComment(GetCommentsToCommentRequest) returns (GetCommentsToCommentResponse);
 	rpc UpdateComment(UpdateCommentRequest) returns (UpdateCommentResponse);
 	rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+	rpc LikeComment(LikeCommentRequest) returns (LikeCommentResponse);
 }
 
 message CommentMessage
@@ -380,6 +381,17 @@ message CommentContentMessage
 	string marker = 2;
 	ContentTypeEnum content_type_enum = 3;
 	bytes content = 4;
+}
+
+message LikeCommentRequest
+{
+	string userId = 1;
+	string commentId = 2;
+}
+message LikeCommentResponse
+{
+	uint32 code = 1;
+	string message = 2;
 }
 
 message CreateCommentToPostRequest

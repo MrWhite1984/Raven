@@ -67,5 +67,25 @@ namespace Raven.DB.Neo4j.Importers
                 return (ex.Message);
             }
         }
+
+        public async static Task<string> AddCommentLikeRelationship(string userId, string commentId)
+        {
+            try
+            {
+                using (var session = new Neo4jContext().driver.AsyncSession())
+                {
+                    var result = await session.RunAsync(Neo4jContext.CypherQuerries["AddCommentLikeRelationship"], new
+                    {
+                        userId = userId,
+                        commentId = commentId
+                    });
+                }
+                return "OK";
+            }
+            catch (Exception ex)
+            {
+                return (ex.Message);
+            }
+        }
     }
 }
