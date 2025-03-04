@@ -16,6 +16,7 @@ namespace Raven.DB.PSQL
         public DbSet<Posts> Posts { get; set; }
         public DbSet<TagsPosts> TagsPosts { get; set; }
         public DbSet<PostContent> PostContents { get; set; }
+        public DbSet<Logs> Logs { get; set; }
 
         public AppDbContext()
         {

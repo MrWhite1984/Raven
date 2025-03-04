@@ -17,7 +17,6 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 using (var db = new AppDbContext())
                 {
                     List<Tags> tags = await db.Tags.ToListAsync();
-
                     return (tags, "OK");
                 }
             }

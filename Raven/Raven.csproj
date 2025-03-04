@@ -20,9 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Raven.Logger\Raven.Logger.csproj" />
     <ProjectReference Include="..\Raven.DB.MinIO\Raven.DB.MinIO.csproj" />
     <ProjectReference Include="..\Raven.DB.Neo4j\Raven.DB.Neo4j.csproj" />
     <ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.csproj" />
+    <ProjectReference Include="..\Raven.Logger\Raven.Logger.csproj" />
   </ItemGroup>
 
 

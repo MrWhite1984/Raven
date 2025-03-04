@@ -4,6 +4,7 @@ using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 using Raven.DB.PSQL.gRPC.Updaters;
+using Raven.Logger;
 
 namespace Raven.Services
 {
@@ -13,15 +14,9 @@ namespace Raven.Services
         {
             GetTagsResponse response = new GetTagsResponse();
             var dbResponse = TagExporter.GetTagsList();
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
-                response.Entities.Add(new List<TagMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else if (dbResponse.Result.Item2 != "OK")
-            {
-                response.Entities.Add(new List<TagMessage>());
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
             }
@@ -37,6 +32,7 @@ namespace Raven.Services
 
 
                 response.Code = 200;
+                Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение тегов");
                 response.Message = dbResponse.Result.Item2;
             }
             return Task.FromResult(response);
@@ -49,15 +45,9 @@ namespace Raven.Services
             {
                 Name = request.Name
             });
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 == null)
             {
-                response.TagMessage = null;
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
-            }
-            else if (dbResponse.Result.Item2 == null)
-            {
-                response.TagMessage = null;
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
             }
@@ -68,6 +58,7 @@ namespace Raven.Services
                     Id = (uint)dbResponse.Result.Item2.Id,
                     Name = dbResponse.Result.Item2.Name
                 };
+                Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Name} добавлен в базу данных");
                 response.Code = 200;
                 response.Message += dbResponse.Result.Item1;
             }
@@ -79,7 +70,7 @@ namespace Raven.Services
             UpdateTagResponse response = new UpdateTagResponse();
             if(request.Id == 0)
             {
-                response.TagMessage = null;
+                Logger.Logger.Log(LogLevel.Error, $"Id было 0");
                 response.Code = 500;
                 response.Message = "Id было 0";
                 return Task.FromResult(response);
@@ -89,15 +80,9 @@ namespace Raven.Services
                 Id = (int)request.Id,
                 Name = request.Name
             });
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 == null)
             {
-                response.TagMessage = null;
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
-            }
-            else if (dbResponse.Result.Item2 == null)
-            {
-                response.TagMessage = null;
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
             }
@@ -108,6 +93,7 @@ namespace Raven.Services
                     Id = (uint)dbResponse.Result.Item2.Id,
                     Name = dbResponse.Result.Item2.Name
                 };
+                Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Name} обновлен");
                 response.Code = 200;
                 response.Message += dbResponse.Result.Item1;
             }
@@ -119,23 +105,21 @@ namespace Raven.Services
             DeleteTagResponse response = new DeleteTagResponse();
             if (request.Id == 0)
             {
+                Logger.Logger.Log(LogLevel.Error, $"Id было 0");
                 response.Code = 500;
                 response.Message = "Id было 0";
                 return Task.FromResult(response);
             }
             var dbResponse = TagDeleter.DeleteTag((int)request.Id);
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result != "OK")
             {
-                response.Code = 500;
-                response.Message = dbResponse.Result;
-            }
-            else if (dbResponse.Result != "OK")
-            {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result);
                 response.Code = 500;
                 response.Message = dbResponse.Result;
             }
             else
             {
+                Logger.Logger.Log(LogLevel.Information, $"Тег с Id = {request.Id} удален из базы данных");
                 response.Code = 200;
                 response.Message = dbResponse.Result;
             }
