@@ -1,7 +1,6 @@
 using Raven.BackgroundServices;
 using Raven.DB.MinIO;
 using Raven.DB.Neo4j;
-using Raven.Logger;
 using Raven.Services;
 
 var minio = new MinioContext();

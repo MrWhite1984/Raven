@@ -8,6 +8,8 @@ using Raven.DB.PSQL.Entity;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 using Raven.DB.PSQL.gRPC.Updaters;
+using Raven.Logger;
+using System.Net;
 
 namespace Raven.Services
 {
@@ -17,48 +19,21 @@ namespace Raven.Services
         {
             GetCategoriesResponse response = new GetCategoriesResponse();
             var dbResponse = CategoryExporter.GetCategoriesList();
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
-                response.Entities.Add(new List<CategoryMessage>());
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
-            {
-                response.Entities.Add(new List<CategoryMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach (var category in dbResponse.Result.Item1)
-                    if (!category.ImageFile.Equals(Guid.Empty))
-                    {
-                        response.Entities
-                        .Add(new CategoryMessage()
-                        {
-                            Id = (uint)category.Id,
-                            Title = category.Title,
-                            ImageFile = category.ImageFile.ToString(),
-                            PostCount = (uint)category.PostCount,
-                            Image = ByteString.CopyFrom(Exporter.GetCategoryImage(category.ImageFile).Result.Item2)
-                        });
-                    }
-                    else
-                    {
-                        response.Entities
-                        .Add(new CategoryMessage()
-                        {
-                            Id = (uint)category.Id,
-                            Title = category.Title,
-                            PostCount = (uint)category.PostCount
-                        });
-                    }
+            foreach (var category in dbResponse.Result.Item1)
+                response.Entities
+                    .Add(CreateCategoryMessage(category));
 
-                    
-                response.Code = 200;
-                response.Message = dbResponse.Result.Item2;
-            }
+            Logger.Logger
+                .Log(LogLevel.Information, $"Категории ({response.Entities.Count}) получены из базы данных");
+            response.Code = 200;
+            response.Message = dbResponse.Result.Item2;
             return Task.FromResult(response);
         }
 
@@ -66,83 +41,56 @@ namespace Raven.Services
         {
             CreateCategoryResponse response = new CreateCategoryResponse();
 
-            if(request.Image.Length != 0)
+            if (request.Image.Length != 0)
             {
                 var minioResponse = Importer.AddNewCategoryImage(request.Image.ToByteArray());
-                if (minioResponse.IsCanceled)
+                if (minioResponse.Result.Item2.Equals(null))
                 {
-                    response.CategoryMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, minioResponse.Result.Item1);
                     response.Code = 500;
                     response.Message = minioResponse.Result.Item1;
+                    return Task.FromResult(response);
                 }
-                else if (minioResponse.Result.Item2.Equals(null))
+                var dbResponse = CategoryImporter.CreateCategory(new Categories()
                 {
-                    response.CategoryMessage = null;
+                    Title = request.Title,
+                    ImageFile = minioResponse.Result.Item2 ?? Guid.Empty
+                });
+                if (dbResponse.Result.Item2 == null)
+                {
+                    Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                     response.Code = 500;
-                    response.Message = minioResponse.Result.Item1;
+                    response.Message = dbResponse.Result.Item1;
+                    return Task.FromResult(response);
                 }
                 else
                 {
-                    var dbResponse = CategoryImporter.CreateCategory(new Categories() 
-                    { 
-                        Title = request.Title, 
-                        ImageFile = minioResponse.Result.Item2 ?? Guid.Empty 
-                    });
-                    if (dbResponse.IsCanceled)
-                    {
-                        response.CategoryMessage = null;
-                        response.Code = 500;
-                        response.Message = dbResponse.Result.Item1;
-                    }
-                    else if (dbResponse.Result.Item2 == null)
-                    {
-                        response.CategoryMessage = null;
-                        response.Code = 500;
-                        response.Message = dbResponse.Result.Item1;
-                    }
-                    else
-                    {
-                        response.CategoryMessage = new CategoryMessage()
-                        {
-                            Id = (uint)dbResponse.Result.Item2.Id,
-                            Title = dbResponse.Result.Item2.Title,
-                            ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                            PostCount = (uint)dbResponse.Result.Item2.PostCount
-                        };
-                        response.Code = 200;
-                        response.Message += dbResponse.Result.Item1;
-                    }
+                    response.CategoryMessage = CreateCategoryMessage(dbResponse.Result.Item2);
+                    response.Message += dbResponse.Result.Item1;
                 }
             }
             else
             {
                 var dbResponse = CategoryImporter.CreateCategory(new Categories() { Title = request.Title });
-                if (dbResponse.IsCanceled)
+                if (dbResponse.Result.Item2 == null)
                 {
-                    response.CategoryMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                     response.Code = 500;
                     response.Message = dbResponse.Result.Item1;
-                }
-                else if (dbResponse.Result.Item2 == null)
-                {
-                    response.CategoryMessage = null;
-                    response.Code = 500;
-                    response.Message = dbResponse.Result.Item1;
+                    return Task.FromResult(response);
                 }
                 else
                 {
-                    response.CategoryMessage = new CategoryMessage()
-                    {
-                        Id = (uint)dbResponse.Result.Item2.Id,
-                        Title = dbResponse.Result.Item2.Title,
-                        ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                        PostCount = (uint)dbResponse.Result.Item2.PostCount
-                    };
-                    response.Code = 200;
+                    response.CategoryMessage = CreateCategoryMessage(dbResponse.Result.Item2);
                     response.Message += dbResponse.Result.Item1;
                 }
             }
-                        
+            Logger.Logger
+                .Log(
+                    LogLevel.Information,
+                    $"Категория {response.CategoryMessage.Title} добавлена в базу данных"
+                    );
+            response.Code = 200;
             return Task.FromResult(response);
         }
 
@@ -151,7 +99,7 @@ namespace Raven.Services
             UpdateCategoryResponse response = new UpdateCategoryResponse();
             if(request.Id == 0)
             {
-                response.CategoryMessage = null;
+                Logger.Logger.Log(LogLevel.Error, "Id было 0");
                 response.Code = 500;
                 response.Message = "Id было 0";
                 return Task.FromResult(response);
@@ -159,17 +107,12 @@ namespace Raven.Services
             if (request.Image.Length != 0)
             {
                 var minioResponse = Importer.AddNewCategoryImage(request.Image.ToByteArray());
-                if (minioResponse.IsCanceled)
+                if (minioResponse.Result.Item2.Equals(null))
                 {
-                    response.CategoryMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, minioResponse.Result.Item1);
                     response.Code = 500;
                     response.Message = minioResponse.Result.Item1;
-                }
-                else if (minioResponse.Result.Item2.Equals(null))
-                {
-                    response.CategoryMessage = null;
-                    response.Code = 500;
-                    response.Message = minioResponse.Result.Item1;
+                    return Task.FromResult(response);
                 }
                 else
                 {
@@ -179,28 +122,16 @@ namespace Raven.Services
                         Title = request.Title,
                         ImageFile = minioResponse.Result.Item2 ?? Guid.Empty
                     });
-                    if (dbResponse.IsCanceled)
+                    if (dbResponse.Result.Item1 != "OK")
                     {
-                        response.CategoryMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                         response.Code = 500;
                         response.Message = dbResponse.Result.Item1;
-                    }
-                    else if (dbResponse.Result.Item1 != "OK")
-                    {
-                        response.CategoryMessage = null;
-                        response.Code = 500;
-                        response.Message = dbResponse.Result.Item1;
+                        return Task.FromResult(response);
                     }
                     else
                     {
-                        response.CategoryMessage = new CategoryMessage()
-                        {
-                            Id = (uint)dbResponse.Result.Item2.Id,
-                            Title = dbResponse.Result.Item2.Title,
-                            ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                            PostCount = (uint)dbResponse.Result.Item2.PostCount
-                        };
-                        response.Code = 200;
+                        response.CategoryMessage = CreateCategoryMessage(dbResponse.Result.Item2);
                         response.Message += dbResponse.Result.Item1;
                     }
                 }
@@ -212,33 +143,34 @@ namespace Raven.Services
                     Id = (int)request.Id,
                     Title = request.Title 
                 });
-                if (dbResponse.IsCanceled)
+                if (dbResponse.Result.Item2 == null)
                 {
-                    response.CategoryMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                     response.Code = 500;
                     response.Message = dbResponse.Result.Item1;
-                }
-                else if (dbResponse.Result.Item2 == null)
-                {
-                    response.CategoryMessage = null;
-                    response.Code = 500;
-                    response.Message = dbResponse.Result.Item1;
+                    return Task.FromResult(response);
                 }
                 else
                 {
-                    response.CategoryMessage = new CategoryMessage()
-                    {
-                        Id = (uint)dbResponse.Result.Item2.Id,
-                        Title = dbResponse.Result.Item2.Title,
-                        ImageFile = dbResponse.Result.Item2.ImageFile.ToString(),
-                        PostCount = (uint)dbResponse.Result.Item2.PostCount
-                    };
-                    response.Code = 200;
+                    response.CategoryMessage = CreateCategoryMessage(dbResponse.Result.Item2);
                     response.Message += dbResponse.Result.Item1;
                 }
             }
-
+            Logger.Logger.Log(LogLevel.Information, $"Категория {response.CategoryMessage.Id} обновлена");
+            response.Code = 200;
             return Task.FromResult(response);
+        }
+
+        public static CategoryMessage CreateCategoryMessage(Categories category)
+        {
+            var response = new CategoryMessage()
+            {
+                Id = (uint)category.Id,
+                Title = category.Title,
+                ImageFile = category.ImageFile.ToString(),
+                PostCount = (uint)category.PostCount
+            };
+            return response;
         }
     }
 }

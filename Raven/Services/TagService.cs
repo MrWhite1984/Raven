@@ -19,22 +19,19 @@ namespace Raven.Services
                 Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else
-            {
-                foreach (var tag in dbResponse.Result.Item1)
-                    response.Entities
-                        .Add(new TagMessage()
-                        {
-                            Id = (uint)tag.Id,
-                            Name = tag.Name
-                        });
+            foreach (var tag in dbResponse.Result.Item1)
+                response.Entities
+                    .Add(new TagMessage()
+                    {
+                        Id = (uint)tag.Id,
+                        Name = tag.Name
+                    });
 
-
-                response.Code = 200;
-                Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение тегов");
-                response.Message = dbResponse.Result.Item2;
-            }
+            response.Code = 200;
+            Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение тегов ({response.Entities.Count})");
+            response.Message = dbResponse.Result.Item2;
             return Task.FromResult(response);
         }
 
@@ -50,18 +47,16 @@ namespace Raven.Services
                 Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
             }
-            else
+            response.TagMessage = new TagMessage()
             {
-                response.TagMessage = new TagMessage()
-                {
-                    Id = (uint)dbResponse.Result.Item2.Id,
-                    Name = dbResponse.Result.Item2.Name
-                };
-                Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Name} добавлен в базу данных");
-                response.Code = 200;
-                response.Message += dbResponse.Result.Item1;
-            }
+                Id = (uint)dbResponse.Result.Item2.Id,
+                Name = dbResponse.Result.Item2.Name
+            };
+            Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Name} добавлен в базу данных");
+            response.Code = 200;
+            response.Message += dbResponse.Result.Item1;
             return Task.FromResult(response);
         }
 
@@ -85,18 +80,16 @@ namespace Raven.Services
                 Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
             }
-            else
+            response.TagMessage = new TagMessage()
             {
-                response.TagMessage = new TagMessage()
-                {
-                    Id = (uint)dbResponse.Result.Item2.Id,
-                    Name = dbResponse.Result.Item2.Name
-                };
-                Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Name} обновлен");
-                response.Code = 200;
-                response.Message += dbResponse.Result.Item1;
-            }
+                Id = (uint)dbResponse.Result.Item2.Id,
+                Name = dbResponse.Result.Item2.Name
+            };
+            Logger.Logger.Log(LogLevel.Information, $"Тег {response.TagMessage.Id} обновлен");
+            response.Code = 200;
+            response.Message += dbResponse.Result.Item1;
             return Task.FromResult(response);
         }
 
@@ -116,13 +109,11 @@ namespace Raven.Services
                 Logger.Logger.Log(LogLevel.Error, dbResponse.Result);
                 response.Code = 500;
                 response.Message = dbResponse.Result;
+                return Task.FromResult(response);
             }
-            else
-            {
-                Logger.Logger.Log(LogLevel.Information, $"Тег с Id = {request.Id} удален из базы данных");
-                response.Code = 200;
-                response.Message = dbResponse.Result;
-            }
+            Logger.Logger.Log(LogLevel.Information, $"Тег {request.Id} удален из базы данных");
+            response.Code = 200;
+            response.Message = dbResponse.Result;
             return Task.FromResult(response);
         }
     }
