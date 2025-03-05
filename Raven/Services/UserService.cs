@@ -15,33 +15,26 @@ namespace Raven.Services
             {
                 Id = request.UserId,
             });
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 == null)
             {
-                response.User = null;
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 == null)
+            var neo4jResponse = Neo4jUserImporter.AddNewUser(dbResponse.Result.Item2.Id).Result;
+            if (neo4jResponse != "OK")
             {
-                response.User = "";
+                UserDeleter.DeleteUser(dbResponse.Result.Item2.Id);
+                Logger.Logger.Log(LogLevel.Error, neo4jResponse);
                 response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
+                response.Message += neo4jResponse;
+                return Task.FromResult(response);
             }
-            else
-            {
-                var neo4jResponse = Neo4jUserImporter.AddNewUser(dbResponse.Result.Item2.Id).Result;
-                if (neo4jResponse != "OK")
-                {
-                    UserDeleter.DeleteUser(dbResponse.Result.Item2.Id);
-                    response.User = null;
-                    response.Code = 500;
-                    response.Message += neo4jResponse;
-                    return Task.FromResult(response);
-                }
-                response.User = dbResponse.Result.Item2.Id;
-                response.Code = 200;
-                response.Message += dbResponse.Result.Item1;
-            }
+            response.User = dbResponse.Result.Item2.Id;
+            response.Code = 200;
+            response.Message += dbResponse.Result.Item1;
+            Logger.Logger.Log(LogLevel.Information, $"Пользователь {response.User} добавлен в базу данных");
             return Task.FromResult(response);
         }
 
@@ -49,27 +42,21 @@ namespace Raven.Services
         {
             GetUsersResponse response = new GetUsersResponse();
             var dbResponse = UserExporter.GetUsersList();
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
-                response.Entities.Add(new List<string>());
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
-            {
-                response.Entities.Add(new List<string>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach (var user in dbResponse.Result.Item1)
-                    response.Entities
-                        .Add(user.Id);
+            foreach (var user in dbResponse.Result.Item1)
+                response.Entities
+                    .Add(user.Id);
 
-                response.Code = 200;
-                response.Message = dbResponse.Result.Item2;
-            }
+            response.Code = 200;
+            response.Message = dbResponse.Result.Item2;
+            Logger.Logger
+                .Log(LogLevel.Information, $"Выполнен запрос на получение пользователей ({response.Entities.Count})");
             return Task.FromResult(response);
         }
     }
