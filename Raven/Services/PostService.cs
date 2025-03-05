@@ -15,6 +15,7 @@ using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 using Raven.DB.PSQL.gRPC.Updaters;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Raven.Services
 {
@@ -23,10 +24,17 @@ namespace Raven.Services
         public override Task<CreatePostResponse> CreatePost(CreatePostRequest request, ServerCallContext context)
         {
             CreatePostResponse response = new CreatePostResponse();
+            if(request.TagIds.Count == 0)
+            {
+                Logger.Logger.Log(LogLevel.Error, "TagIds было null");
+                response.Code = 500;
+                response.Message = "TagIds было null";
+                return Task.FromResult(response);
+            }
             var getCategoryResponse = CategoryExporter.GetCategory((int)request.CategoryId);
             if (getCategoryResponse.Result.Item1 == null)
             {
-                response.PostMessage = null;
+                Logger.Logger.Log(LogLevel.Error, getCategoryResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getCategoryResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -37,7 +45,7 @@ namespace Raven.Services
                 getCategoryImageResponse = Exporter.GetCategoryImage(getCategoryResponse.Result.Item1.ImageFile);
                 if (getCategoryImageResponse.Result.Item1 != "OK")
                 {
-                    response.PostMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, getCategoryImageResponse.Result.Item1);
                     response.Code = 500;
                     response.Message = getCategoryImageResponse.Result.Item1;
                     return Task.FromResult(response);
@@ -49,16 +57,9 @@ namespace Raven.Services
                 if (content.ContentTypeEnum.ToString().Equals("Image"))
                 {
                     var addContentResponse = Importer.AddNewPostImage(content.Content.ToByteArray());
-                    if (addContentResponse.IsCanceled)
+                    if (addContentResponse.Result.Item2.Equals(null))
                     {
-                        response.PostMessage = null;
-                        response.Code = 500;
-                        response.Message = addContentResponse.Result.Item1;
-                        return Task.FromResult(response);
-                    }
-                    else if (addContentResponse.Result.Item2.Equals(null))
-                    {
-                        response.PostMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, addContentResponse.Result.Item1);
                         response.Code = 500;
                         response.Message = addContentResponse.Result.Item1;
                         return Task.FromResult(response);
@@ -72,16 +73,9 @@ namespace Raven.Services
                 else
                 {
                     var addContentResponse = Importer.AddNewPostVideo(content.Content.ToByteArray());
-                    if (addContentResponse.IsCanceled)
+                    if (addContentResponse.Result.Item2.Equals(null))
                     {
-                        response.PostMessage = null;
-                        response.Code = 500;
-                        response.Message = addContentResponse.Result.Item1;
-                        return Task.FromResult(response);
-                    }
-                    else if (addContentResponse.Result.Item2.Equals(null))
-                    {
-                        response.PostMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, addContentResponse.Result.Item1);
                         response.Code = 500;
                         response.Message = addContentResponse.Result.Item1;
                         return Task.FromResult(response);
@@ -101,9 +95,9 @@ namespace Raven.Services
                 var getTagResponse = TagExporter.GetTag((int)tagId);
                 if (getTagResponse.Result.Item1 == null)
                 {
-                    response.PostMessage = null;
+                    Logger.Logger.Log(LogLevel.Error, "Теги не были найдены в базе данных");
                     response.Code = 500;
-                    response.Message = getTagResponse.Result.Item2;
+                    response.Message = "Теги не были найдены в базе данных";
                     return Task.FromResult(response);
                 }
                 tags.Add(getTagResponse.Result.Item1);
@@ -119,16 +113,9 @@ namespace Raven.Services
                         CreatedAt = DateTime.UtcNow
                     }
                 );
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 == null)
             {
-                response.PostMessage = null;
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item1;
-                return Task.FromResult(response);
-            }
-            else if (dbResponse.Result.Item2 == null)
-            {
-                response.PostMessage = null;
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -145,18 +132,10 @@ namespace Raven.Services
                                 TagId = tagPost.Id
                             }
                         );
-                    if (createTagMessageResponse.IsCanceled)
+                    if (createTagMessageResponse.Result.Item2 == null)
                     {
                         PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
-                        response.PostMessage = null;
-                        response.Code = 500;
-                        response.Message = createTagMessageResponse.Result.Item1;
-                        return Task.FromResult(response);
-                    }
-                    else if (createTagMessageResponse.Result.Item2 == null)
-                    {
-                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
-                        response.PostMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, createTagMessageResponse.Result.Item1);
                         response.Code = 500;
                         response.Message = createTagMessageResponse.Result.Item1;
                         return Task.FromResult(response);
@@ -182,18 +161,10 @@ namespace Raven.Services
                                 ContentType = contentMeta.Item3
                             }
                         );
-                    if (addPostContentResponse.IsCanceled)
+                    if (addPostContentResponse.Result.Item2 == null)
                     {
                         PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
-                        response.PostMessage = null;
-                        response.Code = 500;
-                        response.Message = addPostContentResponse.Result.Item1;
-                        return Task.FromResult(response);
-                    }
-                    else if (addPostContentResponse.Result.Item2 == null)
-                    {
-                        PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
-                        response.PostMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, addPostContentResponse.Result.Item1);
                         response.Code = 500;
                         response.Message = addPostContentResponse.Result.Item1;
                         return Task.FromResult(response);
@@ -202,7 +173,7 @@ namespace Raven.Services
                     if (addPostNeo4jResponse.Result != "OK")
                     {
                         PostDeleter.DeletePost(dbResponse.Result.Item2.Id);
-                        response.PostMessage = null;
+                        Logger.Logger.Log(LogLevel.Error, addPostNeo4jResponse.Result);
                         response.Code = 500;
                         response.Message = addPostNeo4jResponse.Result;
                         return Task.FromResult(response);
@@ -234,15 +205,24 @@ namespace Raven.Services
             response.PostMessage.Tags.AddRange(tagMessages);
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information, $"Пост {response.PostMessage.Title} добавлен в базу данных");
             return Task.FromResult(response);
         }
 
         public override Task<AddPostToLikedResponse> AddPostToLiked(AddPostToLikedRequest request, ServerCallContext context)
         {
             var response = new AddPostToLikedResponse();
+            if(request.PostId == "" || request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "Один из параметров был пустой");
+                response.Code = 500;
+                response.Message = "Один из параметров был пустой";
+                return Task.FromResult(response);
+            }
             var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
             if(getPostResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, getPostResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getPostResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -251,6 +231,7 @@ namespace Raven.Services
             var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
             if(updatePostResponse.Result.Item1 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, updatePostResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = updatePostResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -258,29 +239,43 @@ namespace Raven.Services
             var neo4jResponse = Neo4jRelationshipImporter.AddPostLikeRelationship(request.UserId, request.PostId).Result;
             if(neo4jResponse != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jResponse);
                 response.Code = 500;
                 response.Message = neo4jResponse;
+                return Task.FromResult(response);
             }
             var neo4jCreateRecommendationsResponse = Neo4jRecomendationRelationshipCreator.CreateNewRecomendations(request.UserId).Result;
             if (neo4jCreateRecommendationsResponse != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jCreateRecommendationsResponse);
                 response.Code = 500;
                 response.Message = neo4jCreateRecommendationsResponse;
+                return Task.FromResult(response);
             }
-            else
-            {
-                response.Code = 200;
-                response.Message = neo4jResponse;
-            }
+            response.Code = 200;
+            response.Message = neo4jResponse;
+            Logger.Logger
+                .Log(
+                LogLevel.Information,
+                $"Добавдена связь \"Лайк\" между пользователем {request.UserId} и постом {request.PostId}"
+                );
             return Task.FromResult(response);
         }
 
         public override Task<AddPostToViewsResponse> AddPostToViews(AddPostToViewsRequest request, ServerCallContext context)
         {
             var response = new AddPostToViewsResponse();
+            if (request.PostId == "" || request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "Один из параметров был пустой");
+                response.Code = 500;
+                response.Message = "Один из параметров был пустой";
+                return Task.FromResult(response);
+            }
             var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
             if (getPostResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, getPostResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getPostResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -289,6 +284,7 @@ namespace Raven.Services
             var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
             if (updatePostResponse.Result.Item1 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, updatePostResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = updatePostResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -296,30 +292,41 @@ namespace Raven.Services
             var neo4jResponse = Neo4jRelationshipImporter.AddPostViewRelationship(request.UserId, request.PostId).Result;
             if (neo4jResponse != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jResponse);
                 response.Code = 500;
                 response.Message = neo4jResponse;
+                return Task.FromResult(response);
             }
             var neo4jRecommendedRelationshipDeleterResponse =
                 Neo4jRecommendedRelationshipDeleter.DeleteRelationship(request.UserId, request.PostId).Result;
             if (neo4jRecommendedRelationshipDeleterResponse != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jRecommendedRelationshipDeleterResponse);
                 response.Code = 500;
                 response.Message = neo4jRecommendedRelationshipDeleterResponse;
+                return Task.FromResult(response);
             }
-            else
-            {
-                response.Code = 200;
-                response.Message = neo4jResponse;
-            }
+            response.Code = 200;
+            response.Message = neo4jResponse;
+            Logger.Logger.Log(LogLevel.Information,
+                $"Добавдена связь \"Просмотрено\" между пользователем {request.UserId} и постом {request.PostId}");
             return Task.FromResult(response);
         }
 
         public override Task<AddPostToBookmarksResponse> AddPostToBookmarks(AddPostToBookmarksRequest request, ServerCallContext context)
         {
             var response = new AddPostToBookmarksResponse();
+            if (request.PostId == "" || request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "Один из параметров был пустой");
+                response.Code = 500;
+                response.Message = "Один из параметров был пустой";
+                return Task.FromResult(response);
+            }
             var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
             if (getPostResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, getPostResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getPostResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -328,6 +335,7 @@ namespace Raven.Services
             var updatePostResponse = PostUpdater.UpdatePost(getPostResponse.Result.Item1);
             if (updatePostResponse.Result.Item1 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, updatePostResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = updatePostResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -335,23 +343,32 @@ namespace Raven.Services
             var neo4jResponse = Neo4jRelationshipImporter.AddPostBookmarkRelationship(request.UserId, request.PostId).Result;
             if (neo4jResponse != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jResponse);
                 response.Code = 500;
                 response.Message = neo4jResponse;
+                return Task.FromResult(response);
             }
-            else
-            {
-                response.Code = 200;
-                response.Message = neo4jResponse;
-            }
+            response.Code = 200;
+            response.Message = neo4jResponse;
+            Logger.Logger.Log(LogLevel.Information,
+                $"Добавдена связь \"Избранное\" между пользователем {request.UserId} и постом {request.PostId}");
             return Task.FromResult(response);
         }
 
         public override Task<DeletePostResponse> DeletePost(DeletePostRequest request, ServerCallContext context)
         {
             DeletePostResponse response = new DeletePostResponse();
+            if(request.PostId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "PostId был пустой");
+                response.Code = 500;
+                response.Message = "PostId был пустой";
+                return Task.FromResult(response);
+            }
             var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
             if (getPostResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, getPostResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getPostResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -359,6 +376,7 @@ namespace Raven.Services
             var deletePostResponse = PostDeleter.DeletePost(Guid.Parse(request.PostId));
             if(deletePostResponse.Result != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, deletePostResponse.Result);
                 response.Code = 500;
                 response.Message = deletePostResponse.Result;
                 return Task.FromResult(response);
@@ -366,6 +384,7 @@ namespace Raven.Services
             var neo4jResponse = Neo4jPostDeleter.DeletePost(request.PostId);
             if (neo4jResponse.Result != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jResponse.Result);
                 response.Code = 500;
                 response.Message = neo4jResponse.Result;
                 return Task.FromResult(response);
@@ -377,6 +396,7 @@ namespace Raven.Services
                     var deletePostContentResponse = Deleter.DeletePostImage(content.ContentId);
                     if(deletePostContentResponse.Result != "OK")
                     {
+                        Logger.Logger.Log(LogLevel.Error, deletePostContentResponse.Result);
                         response.Code = 500;
                         response.Message = deletePostContentResponse.Result;
                         return Task.FromResult(response);
@@ -387,6 +407,7 @@ namespace Raven.Services
                     var deletePostContentResponse = Deleter.DeletePostVideo(content.ContentId);
                     if (deletePostContentResponse.Result != "OK")
                     {
+                        Logger.Logger.Log(LogLevel.Error, deletePostContentResponse.Result);
                         response.Code = 500;
                         response.Message = deletePostContentResponse.Result;
                         return Task.FromResult(response);
@@ -395,6 +416,8 @@ namespace Raven.Services
             }
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information,
+                $"Пост {request.PostId} удален");
             return Task.FromResult(response);
         }
 
@@ -411,70 +434,72 @@ namespace Raven.Services
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
             var dbResponse = PostExporter.GetPosts(dateTimeCursor, (int)request.PageSize);
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
+            foreach (var post in dbResponse.Result.Item1)
             {
-                response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach(var post in dbResponse.Result.Item1)
+                var createPostMessageResponse = CreatePostMessage(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
                 {
-                    var createPostMessageResponse = CreatePostMessage(post);
-                    if (createPostMessageResponse.Result.Item2 != "OK")
-                    {
-                        response.Code = 500;
-                        response.Message = createPostMessageResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    var postMessage = createPostMessageResponse.Result.Item1;
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    response.NextCursor = request.Cursor;
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    return Task.FromResult(response);
+                }
+                var postMessage = createPostMessageResponse.Result.Item1;
 
-                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
 
-                    if
-                        (
-                        neo4jLikeCheckerResponse.Item1 != "OK" ||
-                        neo4jViewCheckerResponse.Item1 != "OK" ||
-                        neo4jBookmarkCheckerResponse.Item1 != "OK"
-                        )
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = "Ошибка работы с Neo4j";
-                        return Task.FromResult(response);
-                    }
-
-                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
-                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
-                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
-
-                    response.Entities.Add(postMessage);
+                if
+                    (
+                    neo4jLikeCheckerResponse.Item1 != "OK" ||
+                    neo4jViewCheckerResponse.Item1 != "OK" ||
+                    neo4jBookmarkCheckerResponse.Item1 != "OK"
+                    )
+                {
+                    Logger.Logger.Log(LogLevel.Error, "Ошибка работы с Neo4j");
+                    response.NextCursor = request.Cursor;
+                    response.Code = 500;
+                    response.Message = "Ошибка работы с Neo4j";
+                    return Task.FromResult(response);
                 }
 
+                postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                response.Entities.Add(postMessage);
             }
             response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение постов ({response.Entities.Count})");
             return Task.FromResult(response);
         }
 
         public override Task<GetRecommendedPostsResponse> GetRecommendedPosts(GetRecommendedPostsRequest request, ServerCallContext context)
         {
             var response = new GetRecommendedPostsResponse();
+            if (request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "UserId был пустой");
+                response.Code = 500;
+                response.Message = "UserId был пустой";
+                return Task.FromResult(response);
+            }
             var neo4jGetRecommendedPostResponse = Neo4jPostExporter.GetRecommendedPosts(request.UserId, (int)request.PageSize);
             if(neo4jGetRecommendedPostResponse.Result.Item1 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jGetRecommendedPostResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = neo4jGetRecommendedPostResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -482,29 +507,42 @@ namespace Raven.Services
             var dbResponse = PostExporter.GetPostsByIdsList(neo4jGetRecommendedPostResponse.Result.Item2);
             if(dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
                 return Task.FromResult(response);
             }
-            response.Code = 200;
             foreach(var post in dbResponse.Result.Item1)
             {
                 var createPostMessageResponse = CreatePostMessage(post);
                 if(createPostMessageResponse.Result.Item2 != "OK")
                 {
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
                     response.Code = 500;
                     response.Message = createPostMessageResponse.Result.Item2;
                     return Task.FromResult(response);
                 }
                 response.Entities.Add(createPostMessageResponse.Result.Item1);
             }
+            response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information,
+                $"Выполнен запрос на получение рекомендованных постов " +
+                $"({response.Entities.Count}) для пользователя {request.UserId}");
             return Task.FromResult(response);
         }
 
         public override Task<GetUserPostsResponse> GetUserPosts(GetUserPostsRequest request, ServerCallContext context)
         {
             var response = new GetUserPostsResponse();
+            if (request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "UserId был пустой");
+                response.Code = 500;
+                response.Message = "UserId был пустой";
+                response.NextCursor = request.Cursor;
+                return Task.FromResult(response);
+            }
             DateTime dateTimeCursor;
             if (request.Cursor == null)
             {
@@ -515,61 +553,57 @@ namespace Raven.Services
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
             var dbResponse = PostExporter.GetPostsByUser(dateTimeCursor, (int)request.PageSize, request.UserId);
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
+            foreach (var post in dbResponse.Result.Item1)
             {
-                response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach (var post in dbResponse.Result.Item1)
+                var createPostMessageResponse = CreatePostMessage(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
                 {
-                    var createPostMessageResponse = CreatePostMessage(post);
-                    if (createPostMessageResponse.Result.Item2 != "OK")
-                    {
-                        response.Code = 500;
-                        response.Message = createPostMessageResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    var postMessage = createPostMessageResponse.Result.Item1;
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    response.NextCursor = request.Cursor;
+                    return Task.FromResult(response);
+                }
+                var postMessage = createPostMessageResponse.Result.Item1;
 
-                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
 
-                    if
-                        (
-                        neo4jLikeCheckerResponse.Item1 != "OK" ||
-                        neo4jViewCheckerResponse.Item1 != "OK" ||
-                        neo4jBookmarkCheckerResponse.Item1 != "OK"
-                        )
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = "Ошибка работы с Neo4j";
-                        return Task.FromResult(response);
-                    }
-
-                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
-                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
-                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
-
-                    response.Entities.Add(postMessage);
+                if
+                    (
+                    neo4jLikeCheckerResponse.Item1 != "OK" ||
+                    neo4jViewCheckerResponse.Item1 != "OK" ||
+                    neo4jBookmarkCheckerResponse.Item1 != "OK"
+                    )
+                {
+                    Logger.Logger.Log(LogLevel.Error, "Ошибка работы с Neo4j");
+                    response.NextCursor = request.Cursor;
+                    response.Code = 500;
+                    response.Message = "Ошибка работы с Neo4j";
+                    return Task.FromResult(response);
                 }
 
+                postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                response.Entities.Add(postMessage);
             }
             response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger
+                .Log(LogLevel.Information, $"Выполен запрос на получение постов " +
+                $"({response.Entities.Count}) пользователя ({request.UserId})");
             return Task.FromResult(response);
 
         }
@@ -577,6 +611,14 @@ namespace Raven.Services
         public override Task<GetBookmarkedPostsResponse> GetBookmarkedPosts(GetBookmarkedPostsRequest request, ServerCallContext context)
         {
             var response = new GetBookmarkedPostsResponse();
+            if(request.UserId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "UserId был пустой");
+                response.Code = 500;
+                response.Message = "UserId был пустой";
+                response.NextCursor = request.Cursor;
+                return Task.FromResult(response);
+            }
             DateTime dateTimeCursor;
             if (request.Cursor == null)
             {
@@ -593,8 +635,10 @@ namespace Raven.Services
                 );
             if (neo4jGetBookmarkedPostsPostResponse.Result.Item1 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, neo4jGetBookmarkedPostsPostResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = neo4jGetBookmarkedPostsPostResponse.Result.Item1;
+                response.NextCursor = request.Cursor;
                 return Task.FromResult(response);
             }
             var dbResponse = PostExporter
@@ -603,34 +647,48 @@ namespace Raven.Services
                 );
             if (dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                response.NextCursor = request.Cursor;
                 return Task.FromResult(response);
             }
-            response.Code = 200;
             foreach (var post in dbResponse.Result.Item1)
             {
                 var createPostMessageResponse = CreatePostMessage(post);
                 if (createPostMessageResponse.Result.Item2 != "OK")
                 {
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
                     response.Code = 500;
                     response.Message = createPostMessageResponse.Result.Item2;
+                    response.NextCursor = request.Cursor;
                     return Task.FromResult(response);
                 }
                 response.Entities.Add(createPostMessageResponse.Result.Item1);
             }
+            response.Code = 200;
             response.Message = "OK";
             response.NextCursor = Timestamp
                 .FromDateTime(neo4jGetBookmarkedPostsPostResponse.Result.Item3);
+            Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение постов ({response.Entities.Count}), " +
+                $"добавленных пользователем ({request.UserId}) в избранное");
             return Task.FromResult(response);
         }
 
         public override Task<UpdateBodyPostResoponse> UpdateBodyPost(UpdateBodyPostRequest request, ServerCallContext context)
         {
             var response = new UpdateBodyPostResoponse();
+            if(request.PostId == "")
+            {
+                Logger.Logger.Log(LogLevel.Error, "PostId был пустой");
+                response.Code = 500;
+                response.Message = "PostId был пустой";
+                return Task.FromResult(response);
+            }
             var getPostResponse = PostExporter.GetPost(Guid.Parse(request.PostId));
             if (getPostResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, getPostResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = getPostResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -641,12 +699,14 @@ namespace Raven.Services
             var dbResponse = PostUpdater.UpdatePost(post);
             if (dbResponse.IsCanceled)
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
                 return Task.FromResult(response);
             }
             else if (dbResponse.Result.Item2 == null)
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item1);
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item1;
                 return Task.FromResult(response);
@@ -654,6 +714,7 @@ namespace Raven.Services
             var createPostMessageResponse = CreatePostMessage(post);
             if (createPostMessageResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
                 response.Code = 500;
                 response.Message = createPostMessageResponse.Result.Item2;
                 return Task.FromResult(response);
@@ -661,12 +722,21 @@ namespace Raven.Services
             response.Post = createPostMessageResponse.Result.Item1;
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information, $"Пост {response.Post.Title} был обновлен");
             return Task.FromResult(response);
         }
 
         public override Task<GetPostsByCategoryResponse> GetPostsByCategory(GetPostsByCategoryRequest request, ServerCallContext context)
         {
             var response = new GetPostsByCategoryResponse();
+            if(request.CategoryId == 0)
+            {
+                Logger.Logger.Log(LogLevel.Error, "CategoryId было 0");
+                response.NextCursor = request.Cursor;
+                response.Code = 500;
+                response.Message = "CategoryId было 0";
+                return Task.FromResult(response);
+            }
             DateTime dateTimeCursor;
             if (request.Cursor == null)
             {
@@ -677,67 +747,71 @@ namespace Raven.Services
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
             var dbResponse = PostExporter.GetPostsByCategoryId(dateTimeCursor, (int)request.PageSize, (int)request.CategoryId);
-            if (dbResponse.IsCanceled)
+            if (dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
+            foreach (var post in dbResponse.Result.Item1)
             {
-                response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach (var post in dbResponse.Result.Item1)
+                var createPostMessageResponse = CreatePostMessage(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
                 {
-                    var createPostMessageResponse = CreatePostMessage(post);
-                    if (createPostMessageResponse.Result.Item2 != "OK")
-                    {
-                        response.Code = 500;
-                        response.Message = createPostMessageResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    var postMessage = createPostMessageResponse.Result.Item1;
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    response.NextCursor = request.Cursor;
+                    return Task.FromResult(response);
+                }
+                var postMessage = createPostMessageResponse.Result.Item1;
 
-                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
 
-                    if
-                        (
-                        neo4jLikeCheckerResponse.Item1 != "OK" ||
-                        neo4jViewCheckerResponse.Item1 != "OK" ||
-                        neo4jBookmarkCheckerResponse.Item1 != "OK"
-                        )
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = "Ошибка работы с Neo4j";
-                        return Task.FromResult(response);
-                    }
-
-                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
-                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
-                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
-
-                    response.Entities.Add(postMessage);
+                if
+                    (
+                    neo4jLikeCheckerResponse.Item1 != "OK" ||
+                    neo4jViewCheckerResponse.Item1 != "OK" ||
+                    neo4jBookmarkCheckerResponse.Item1 != "OK"
+                    )
+                {
+                    Logger.Logger.Log(LogLevel.Error, "Ошибка работы с Neo4j");
+                    response.NextCursor = request.Cursor;
+                    response.Code = 500;
+                    response.Message = "Ошибка работы с Neo4j";
+                    return Task.FromResult(response);
                 }
 
+                postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                response.Entities.Add(postMessage);
             }
             response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger
+                .Log(LogLevel.Information, $"Выполнен запрос на получение постов ({response.Entities.Count})," +
+                $" категория которых {request.CategoryId}");
             return Task.FromResult(response);
         }
 
         public override Task<GetPostsByTagsResponse> GetPostsByTags(GetPostsByTagsRequest request, ServerCallContext context)
         {
             var response = new GetPostsByTagsResponse();
+            if(request.TagIds.ToList().Count == 0)
+            {
+                Logger.Logger.Log(LogLevel.Error, "TagIds было пустое");
+                response.NextCursor = request.Cursor;
+                response.Code = 500;
+                response.Message = "TagIds было пустое";
+                return Task.FromResult(response);
+            }
             DateTime dateTimeCursor;
             if (request.Cursor == null)
             {
@@ -747,62 +821,62 @@ namespace Raven.Services
             {
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
-            var dbResponse = PostExporter.GetPostsByTagsId(dateTimeCursor, (int)request.PageSize, request.TagIds.ToList().ConvertAll(o=> (int)o));
-            if (dbResponse.IsCanceled)
+            var dbResponse = PostExporter
+                .GetPostsByTagsId(
+                    dateTimeCursor,
+                    (int)request.PageSize,
+                    request.TagIds.ToList().ConvertAll(o=> (int)o)
+                );
+            if (dbResponse.Result.Item2 != "OK")
             {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
                 response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
                 response.Code = 500;
                 response.Message = dbResponse.Result.Item2;
+                return Task.FromResult(response);
             }
-            else if (dbResponse.Result.Item2 != "OK")
+            foreach (var post in dbResponse.Result.Item1)
             {
-                response.NextCursor = request.Cursor;
-                response.Entities.Add(new List<PostMessage>());
-                response.Code = 500;
-                response.Message = dbResponse.Result.Item2;
-            }
-            else
-            {
-                foreach (var post in dbResponse.Result.Item1)
+                var createPostMessageResponse = CreatePostMessage(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
                 {
-                    var createPostMessageResponse = CreatePostMessage(post);
-                    if (createPostMessageResponse.Result.Item2 != "OK")
-                    {
-                        response.Code = 500;
-                        response.Message = createPostMessageResponse.Result.Item2;
-                        return Task.FromResult(response);
-                    }
-                    var postMessage = createPostMessageResponse.Result.Item1;
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    response.Code = 500;
+                    response.Message = createPostMessageResponse.Result.Item2;
+                    response.NextCursor = request.Cursor;
+                    return Task.FromResult(response);
+                }
+                var postMessage = createPostMessageResponse.Result.Item1;
 
-                    var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
-                    var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(request.UserId, post.Id.ToString()).Result;
+                var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(request.UserId, post.Id.ToString()).Result;
 
-                    if
-                        (
-                        neo4jLikeCheckerResponse.Item1 != "OK" ||
-                        neo4jViewCheckerResponse.Item1 != "OK" ||
-                        neo4jBookmarkCheckerResponse.Item1 != "OK"
-                        )
-                    {
-                        response.NextCursor = request.Cursor;
-                        response.Code = 500;
-                        response.Message = "Ошибка работы с Neo4j";
-                        return Task.FromResult(response);
-                    }
-
-                    postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
-                    postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
-                    postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
-
-                    response.Entities.Add(postMessage);
+                if
+                    (
+                    neo4jLikeCheckerResponse.Item1 != "OK" ||
+                    neo4jViewCheckerResponse.Item1 != "OK" ||
+                    neo4jBookmarkCheckerResponse.Item1 != "OK"
+                    )
+                {
+                    Logger.Logger.Log(LogLevel.Error, "Ошибка работы с Neo4j");
+                    response.NextCursor = request.Cursor;
+                    response.Code = 500;
+                    response.Message = "Ошибка работы с Neo4j";
+                    return Task.FromResult(response);
                 }
 
+                postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                response.Entities.Add(postMessage);
             }
             response.NextCursor = Timestamp.FromDateTime(dbResponse.Result.Item3);
             response.Code = 200;
             response.Message = "OK";
+            Logger.Logger.Log(LogLevel.Information, $"Получены посты ({response.Entities.Count})," +
+                $" теги которых ({string.Join(", ", request.TagIds.ToList())})");
             return Task.FromResult(response);
         }
 
