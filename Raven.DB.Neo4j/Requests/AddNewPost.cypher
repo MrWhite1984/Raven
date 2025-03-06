@@ -1,1 +1,1 @@
-﻿CREATE (p:Posts{PostId:$postId})
+﻿MERGE (p:Posts{PostId:$postId})

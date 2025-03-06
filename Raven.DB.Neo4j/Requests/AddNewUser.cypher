@@ -1,1 +1,1 @@
-﻿CREATE (u:Users{UserId:$userId})
+﻿MERGE (u:Users{UserId:$userId})

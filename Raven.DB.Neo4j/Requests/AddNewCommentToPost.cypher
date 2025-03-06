@@ -1,2 +1,3 @@
 ﻿MATCH (p:Posts{PostId:$postId})
-CREATE (c:Comments{CommentId:$commentId}), (c)-[:CommentTo]->(p)
+MERGE (c:Comments{CommentId:$commentId})
+CREATE (c)-[:CommentTo]->(p)

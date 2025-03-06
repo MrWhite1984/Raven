@@ -385,8 +385,8 @@ message CommentContentMessage
 
 message LikeCommentRequest
 {
-	string userId = 1;
-	string commentId = 2;
+	string user_id = 1;
+	string comment_id = 2;
 }
 message LikeCommentResponse
 {
