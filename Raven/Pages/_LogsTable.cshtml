@@ -1,0 +1,21 @@
+﻿@using Raven.DB.PSQL.Entity
+@model List<Logs>
+<table class="logs-table" id="logsTable">
+    <thead>
+        <tr>
+            <th>Дата и время</th>
+            <th>Уровень</th>
+            <th>Сообщение</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@log.DateTime.ToString("yyyy-MMM-dd HH-mm-ss")</td>
+                <td>@log.LogLevel.ToString()</td>
+                <td>@log.Message</td>
+            </tr>
+        }
+    </tbody>
+</table>

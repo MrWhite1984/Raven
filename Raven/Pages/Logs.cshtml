@@ -1,0 +1,184 @@
+﻿@page
+@model Raven.Pages.LogsModel
+@{
+    ViewData["Title"] = "Raven Logs";
+}
+<style>
+    html, body
+    {
+        padding: 0;
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+
+    header {
+        text-align: center;
+        padding: 20px 0;
+        background: linear-gradient(135deg, #1A1A2E, #2C3E50);
+        color: #FFFFFF;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .filter-form {
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        background: #1E1E1E;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .filter-form input, .filter-form button {
+        padding: 12px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 8px;
+        background-color: #2C3E50;
+        color: #FFFFFF;
+        transition: all 0.3s ease;
+    }
+
+    .filter-form input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .filter-form input:focus {
+       outline: none;
+       box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+    }
+
+    .filter-form button {
+       background: linear-gradient(135deg, #FFD700, #FFA500);
+       color: #1A1A1A;
+       cursor: pointer;
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       font-weight: bold;
+    }
+
+    .filter-form button:hover {
+       transform: translateY(-2px);
+       box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+    }
+
+    .level-filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .level-filters label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 8px 12px;
+        background-color: #2C3E50;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .level-filters label:hover {
+        background-color: #34495E;
+    }
+
+    .level-filters input[type="checkbox"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #FFD700;
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .level-filters input[type="checkbox"]:checked::before {
+        content: "✔";
+        position: absolute;
+        top: -2px;
+        left: 1px;
+        color: #FFD700;
+        font-size: 14px;
+    }
+
+    .logs-table-container {
+        /* max-height: 400px; */
+        overflow-y: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        background-color: #1E1E1E;
+    }
+
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #FFFFFF;
+    }
+
+    .logs-table th, .logs-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #444;
+    }
+
+    .logs-table th {
+        background-color: #1A1A2E;
+        color: #CCCCCC;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+    }
+
+    .logs-table tbody tr:hover {
+        background-color: #2C3E50;
+        transition: background-color 0.3s ease;
+    }
+
+</style>
+<body>
+    <header>
+        <h1>
+            Логи микросервиса Raven
+        </h1>
+    </header>
+   @*  <div class="container">
+        <form class="filter-form" id="filterForm">
+            <input type="datetime-local" id="startDate" name="startDate" />
+            <input type="datetime-local" id="endDate" name="endDate" />
+            <button type="button">Фильтровать</button>
+            <button type="button">Показать все логи</button>
+        </form>
+        <div class="level-filters">
+            <label>
+                <input type="checkbox" name="name" value="" checked /> INFORMATION
+            </label>
+            <label>
+                <input type="checkbox" name="name" value="" checked /> ERROR
+            </label>
+        </div> *@
+        <div class = "logs-table-container">
+            @await Html.PartialAsync("_LogsTable", Model.logs)
+        </div>
+    </div>
+</body>

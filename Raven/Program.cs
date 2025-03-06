@@ -12,8 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddHostedService<LogsDropper>();
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
+
+app.UseStaticFiles();
+app.UseRouting();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<CategoryService>();
@@ -21,6 +25,7 @@ app.MapGrpcService<TagService>();
 app.MapGrpcService<UserService>();
 app.MapGrpcService<CommentService>();
 app.MapGrpcService<PostService>();
-app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+app.MapRazorPages();
+app.MapGet("/", () => "gRPC запущен\nWeb-интерфейс доступен на /Logs");
 
 app.Run();

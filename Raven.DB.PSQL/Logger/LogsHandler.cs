@@ -1,4 +1,6 @@
-﻿using Raven.DB.PSQL.Entity;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Raven.DB.PSQL.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +24,49 @@ namespace Raven.DB.PSQL.Logger
             catch (Exception ex)
             {
 
+            }
+        }
+
+        public static Task<List<Logs>> GetLogs
+            ()
+        {
+            var response = (new List<Logs>());
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    List<Logs> logs = db.Logs
+                             .OrderByDescending(o => o.DateTime)
+                             .ToList();
+                    response = logs.ToList();
+                }
+                return Task.FromResult(response);
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(response);
+            }
+        }
+
+        public static Task<(List<Logs>, DateTime)> GetLogs
+            (DateTime cursor, DateTime startDate, DateTime endDate, int pageSize)
+        {
+            var response = (new List<Logs>(), DateTime.Now);
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    List<Logs> logs = db.Logs
+                             .OrderByDescending(o => o.DateTime)
+                             .ToList();
+                    response.Item1 = logs.Take(pageSize).ToList();
+                    response.Item2 = logs.Last().DateTime;
+                }
+                return Task.FromResult(response);
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(response);
             }
         }
     }

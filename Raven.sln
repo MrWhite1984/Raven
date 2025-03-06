@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.Neo4j", "Raven.DB.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.MinIO", "Raven.DB.MinIO\Raven.DB.MinIO.csproj", "{115E5A57-A779-4335-B165-6EBF5218A2C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.Web-interface", "Raven.Web-interface\Raven.Web-interface.csproj", "{F3A2D8FE-A043-461E-A94C-7AA5B27F8284}"
-EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{F6890167-7F33-4CAA-BB13-4C7A627D6580}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.Models", "Raven.Models\Raven.Models.csproj", "{3303A530-DDA0-4390-A7E5-6DA6ABDA3F73}"
@@ -43,10 +41,6 @@ Global
 		{115E5A57-A779-4335-B165-6EBF5218A2C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{115E5A57-A779-4335-B165-6EBF5218A2C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{115E5A57-A779-4335-B165-6EBF5218A2C0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F3A2D8FE-A043-461E-A94C-7AA5B27F8284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3A2D8FE-A043-461E-A94C-7AA5B27F8284}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F3A2D8FE-A043-461E-A94C-7AA5B27F8284}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F3A2D8FE-A043-461E-A94C-7AA5B27F8284}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6890167-7F33-4CAA-BB13-4C7A627D6580}.Release|Any CPU.ActiveCfg = Release|Any CPU
