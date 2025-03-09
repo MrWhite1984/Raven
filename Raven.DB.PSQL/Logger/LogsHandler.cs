@@ -37,6 +37,7 @@ namespace Raven.DB.PSQL.Logger
                 {
                     List<Logs> logs = db.Logs
                              .OrderByDescending(o => o.DateTime)
+                             .Take(10000)
                              .ToList();
                     response = logs.ToList();
                 }

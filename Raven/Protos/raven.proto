@@ -352,7 +352,7 @@ message DeletePostResponse
 }
 
 
-
+//Comment
 service CommentHandler
 {
 	rpc CreateCommentToPost(CreateCommentToPostRequest) returns (CreateCommentToPostResponse);
