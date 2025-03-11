@@ -25,6 +25,7 @@ app.MapGrpcService<TagService>();
 app.MapGrpcService<UserService>();
 app.MapGrpcService<CommentService>();
 app.MapGrpcService<PostService>();
+app.MapGrpcService<TagsPredictorService>();
 app.MapRazorPages();
 app.MapGet("/", () => "gRPC запущен\nWeb-интерфейс доступен на /Logs");
 

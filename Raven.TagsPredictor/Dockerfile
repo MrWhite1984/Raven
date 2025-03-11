@@ -4,8 +4,16 @@ WORKDIR /app
 
 COPY . /app
 
+
 RUN pip install uvicorn
 RUN pip install fastapi
+RUN pip install pydantic
+RUN pip install typing
+RUN pip install asyncpg
+RUN pip install scikit-learn
+RUN pip install APScheduler
+
+
 
 EXPOSE 8008
 

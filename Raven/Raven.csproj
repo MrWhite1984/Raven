@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -22,7 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Raven.DB.MinIO\Raven.DB.MinIO.csproj" />
     <ProjectReference Include="..\Raven.DB.Neo4j\Raven.DB.Neo4j.csproj" />
-    <ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.csproj" />
+    <ProjectReference Include="..\Raven.DB.PSQL.TrainingData\Raven.DB.PSQL.TrainingData.csproj" />
+    <ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.ServiceData.csproj" />
     <ProjectReference Include="..\Raven.Logger\Raven.Logger.csproj" />
   </ItemGroup>
 

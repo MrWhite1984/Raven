@@ -1,12 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Raven.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Raven.DB.PSQL.gRPC.Deleters
+﻿namespace Raven.DB.PSQL.gRPC.Deleters
 {
     public class TagDeleter
     {

@@ -1,13 +1,24 @@
 version: '3.4'
 services:
- postgres:
+ postgres-service-data:
   image: postgres:latest
   environment:
-   POSTGRES_DB: TestDb
+   POSTGRES_DB: ServiceDb
    POSTGRES_USER: admin
    POSTGRES_PASSWORD: p
   ports:
    - "1212:5432"
+  networks:
+   - RavenNetwork
+
+ postgres-training-data:
+  image: postgres:latest
+  environment:
+   POSTGRES_DB: TrainingDb
+   POSTGRES_USER: admin
+   POSTGRES_PASSWORD: p
+  ports:
+   - "1213:5432"
   networks:
    - RavenNetwork
 
@@ -56,17 +67,22 @@ services:
  raven:
   build: ./Raven
   environment:
-   - POSTGRES_HOST=postgres
-   - POSTGRES_DB=TestDb
-   - POSTGRES_USER=admin
-   - POSTGRES_PASSWORD=p
+   - POSTGRES_SERVICE_HOST=postgres-service-data
+   - POSTGRES_SERVICE_DB=ServiceDb
+   - POSTGRES_SERVICE_USER=admin
+   - POSTGRES_SERVICE_PASSWORD=p
+   - POSTGRES_TRAINING_HOST=postgres-training-data
+   - POSTGRES_TRAINING_DB=TrainingDb
+   - POSTGRES_TRAINING_USER=admin
+   - POSTGRES_TRAINING_PASSWORD=p
   ports:
    - "32778:8080"
    - "32779:8081"
   volumes:
   - ./Raven.DB.Neo4j/Requests:/app/CypherRequests
   depends_on:
-   - postgres
+   - postgres-service-data
+   - postgres-training-data
    - minio
    - neo4j
    - redis-logs

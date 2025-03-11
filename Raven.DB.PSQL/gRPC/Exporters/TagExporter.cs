@@ -42,5 +42,22 @@ namespace Raven.DB.PSQL.gRPC.Exporters
                 return (null, ex.Message);
             }
         }
+
+        public static async Task<(List<Tags>, string)> GetTagsByNames(List<string> names)
+        {
+            try
+            {
+                using (var db = new AppDbContext())
+                {
+                    List<Tags> tags = await db.Tags.Where(o=>names.Contains(o.Name)).ToListAsync();
+
+                    return (tags, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (null, ex.Message);
+            }
+        }
     }
 }

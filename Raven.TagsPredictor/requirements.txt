@@ -1,0 +1,5 @@
+asyncpg
+fastapi
+pydantic
+scikit-learn
+APScheduler

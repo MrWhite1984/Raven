@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Raven.DB.PSQL.Entity;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
-using Npgsql;
-using Pgvector.EntityFrameworkCore;
 
 namespace Raven.DB.PSQL
 {
@@ -26,7 +23,7 @@ namespace Raven.DB.PSQL
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder
-                .UseNpgsql("Host=postgres;Port=5432;Database=TestDb;Username=admin;Password=p;Include Error Detail=true;");
+                .UseNpgsql("Host=postgres-service-data;Port=5432;Database=ServiceDb;Username=admin;Password=p;Include Error Detail=true;");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

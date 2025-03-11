@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>   
-	<ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.csproj" />
+	<ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.ServiceData.csproj" />
     <ProjectReference Include="..\Raven.DB.Redis\Raven.DB.Redis.csproj" />
   </ItemGroup>
 

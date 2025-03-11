@@ -467,3 +467,39 @@ message DeleteCommentResponse
 	uint32 code = 1;
 	string message = 2;
 }
+
+service TagsPredictorHandler
+{
+	rpc RetrainTagsPredictorModel(RetrainTagsPredictorModelRequest) returns (RetrainTagsPredictorModelResponse);
+	rpc PredictTags(PredictTagsRequest) returns (PredictTagsResponse);
+	rpc AddBodyPostWithTagsToTrainData(AddBodyPostWithTagsToTrainDataRequest) returns (AddBodyPostWithTagsToTrainDataResponse);
+}
+
+message RetrainTagsPredictorModelRequest{}
+message RetrainTagsPredictorModelResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
+
+message PredictTagsRequest
+{
+	string body_post = 1;
+}
+message PredictTagsResponse
+{
+	repeated TagMessage tag_message = 1;
+	uint32 code = 2;
+	string message = 3;
+}
+
+message AddBodyPostWithTagsToTrainDataRequest
+{
+	string body_post = 1;
+	repeated string tags_names = 2;
+}
+message AddBodyPostWithTagsToTrainDataResponse
+{
+	uint32 code = 1;
+	string message = 2;
+}
