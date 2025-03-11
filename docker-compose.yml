@@ -43,6 +43,16 @@ services:
   networks:
    - RavenNetwork
 
+ raven-tags-predictor:
+  build: ./Raven.TagsPredictor
+  ports:
+   - "8008:8008"
+  command: ["uvicorn", "Raven-TagsPredictor:app", "--host", "0.0.0.0", "--port", "8008"]
+  volumes:
+      - ./Raven.TagsPredictor:/app
+  networks:
+   - RavenNetwork
+
  raven:
   build: ./Raven
   environment:
