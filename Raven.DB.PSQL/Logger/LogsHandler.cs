@@ -17,7 +17,10 @@ namespace Raven.DB.PSQL.Logger
             {
                 using (var db = new AppDbContext())
                 {
-                    db.Logs.AddRange(logs);
+                    db.Logs.AddRange(logs.Select(log => {
+                        log.DateTime = log.DateTime.ToUniversalTime();
+                        return log;
+                    }).ToList());
                     await db.SaveChangesAsync();
                 }
             }

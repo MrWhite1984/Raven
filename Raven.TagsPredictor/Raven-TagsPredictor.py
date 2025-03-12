@@ -1,11 +1,13 @@
 import asyncio
 import os
 from http.client import HTTPException
+from venv import logger
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 from database import get_db_connection
+from logger import log
 
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -63,6 +65,7 @@ async def predict_tags(bodyPost:BodyPost):
 @app.get("/retrain")
 async  def retrain_model():
     print("Запущено переобучение", flush=True)
+    await log(2, "Запущено переобучение")
     data = await get_data_from_db()
     if data == {}:
         print("Нет данных", flush=True)
@@ -88,17 +91,18 @@ async  def retrain_model():
         with open('mlb.pkl', 'wb') as f:
             pickle.dump(mlb, f)
 
-        update_params(model, vectorizer, mlb)
-
+        await update_params(model, vectorizer, mlb)
+        await log(2, "Модель переобучена")
         print("Модель переобучена", flush=True)
 
-def update_params(model, vectorizer, mlb):
+async def update_params(model, vectorizer, mlb):
     global  IS_UPDATING, MODEL, VECTORIZER, MLB
     IS_UPDATING = True
     MODEL = model
     VECTORIZER = vectorizer
     MLB = mlb
     IS_UPDATING = False
+    await log(2, "Параметры обновлены")
 
 async def get_data_from_db():
     try:
@@ -115,3 +119,4 @@ async def get_data_from_db():
 
     except Exception as e:
         print(e)
+        await log(4, "Проблема с подключением к базе данных с данными для обучения")

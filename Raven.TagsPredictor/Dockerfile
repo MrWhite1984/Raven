@@ -12,6 +12,8 @@ RUN pip install typing
 RUN pip install asyncpg
 RUN pip install scikit-learn
 RUN pip install APScheduler
+RUN pip install redis
+RUN pip install orjson
 
 
 

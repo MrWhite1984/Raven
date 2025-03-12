@@ -21,7 +21,8 @@ namespace Raven.Logger
             {
                 LogLevel = logLevel,
                 Message = message,
-                DateTime = DateTime.UtcNow
+                DateTime = DateTime.UtcNow,
+                LogSender = "Raven"
             };
             var db = new RedisDbContext();
             db.WriteAsync(JsonSerializer.Serialize(log));
@@ -29,11 +30,11 @@ namespace Raven.Logger
 
         public static void FlushBuffer()
         {
-            var logs = new RedisDbContext()
+            var dbLogs = new RedisDbContext()
                 .ReadAsync()
                 .Result
-                .Select(o=>JsonSerializer.Deserialize<Logs>(o))
                 .ToList();
+            var logs = dbLogs.Select(o => JsonSerializer.Deserialize<Logs>(o)).ToList();
             LogsHandler.ImportLogsAsync(logs);
             new RedisDbContext().ClearAsync();
         }

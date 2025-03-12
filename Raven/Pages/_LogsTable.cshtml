@@ -4,6 +4,7 @@
     <thead>
         <tr>
             <th>Дата и время</th>
+            <th>Отправитель</th>
             <th>Уровень</th>
             <th>Сообщение</th>
         </tr>
@@ -12,7 +13,8 @@
         @foreach (var log in Model)
         {
             <tr>
-                <td>@log.DateTime.ToString("yyyy-MMM-dd HH-mm-ss")</td>
+                <td>@log.DateTime.ToUniversalTime().ToLocalTime().ToString("yyyy-MMM-dd HH-mm-ss")</td>
+                <td>@log.LogSender</td>
                 <td>@log.LogLevel.ToString()</td>
                 <td>@log.Message</td>
             </tr>
