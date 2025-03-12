@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Raven.TagsPredictor/mlb.pkl
+/Raven.TagsPredictor/model.pkl
+/Raven.TagsPredictor/vectorizer.pkl
