@@ -70,7 +70,7 @@ namespace Raven.Services
                 { 
                     Body = Regex.Replace(request.BodyPost, @"\[[^\]]*\]", "") 
                 }, 
-                    request.TagsNames.ToList());
+                    request.TagMessage.Select(o=>o.Name).ToList());
                 if (dbResponse.Result != "OK")
                     throw new Exception(dbResponse.Result.ToString());
                 response.Code = 200;

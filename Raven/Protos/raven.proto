@@ -496,7 +496,7 @@ message PredictTagsResponse
 message AddBodyPostWithTagsToTrainDataRequest
 {
 	string body_post = 1;
-	repeated string tags_names = 2;
+	repeated TagMessage tag_message = 2;
 }
 message AddBodyPostWithTagsToTrainDataResponse
 {

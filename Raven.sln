@@ -11,13 +11,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.Neo4j", "Raven.DB.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.MinIO", "Raven.DB.MinIO\Raven.DB.MinIO.csproj", "{115E5A57-A779-4335-B165-6EBF5218A2C0}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{F6890167-7F33-4CAA-BB13-4C7A627D6580}"
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "raven-docker-compose", "raven-docker-compose.dcproj", "{F6890167-7F33-4CAA-BB13-4C7A627D6580}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.Redis", "Raven.DB.Redis\Raven.DB.Redis.csproj", "{6A4B6923-28B3-47C8-8958-3D1CAE4FD4D1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.Logger", "Raven.Logger\Raven.Logger.csproj", "{81062020-3BE6-472C-A092-C9D6F2D663D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raven.DB.PSQL.TrainingData", "Raven.DB.PSQL.TrainingData\Raven.DB.PSQL.TrainingData.csproj", "{123D1DAC-6157-422C-99FA-AAD12D3C5440}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raven.DB.PSQL.TrainingData", "Raven.DB.PSQL.TrainingData\Raven.DB.PSQL.TrainingData.csproj", "{123D1DAC-6157-422C-99FA-AAD12D3C5440}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
