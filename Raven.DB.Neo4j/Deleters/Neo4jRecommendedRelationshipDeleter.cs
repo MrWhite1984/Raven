@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Raven.DB.Neo4j.Deleters
+﻿namespace Raven.DB.Neo4j.Deleters
 {
     public class Neo4jRecommendedRelationshipDeleter
     {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Raven.DB.PSQL.TrainingData.Entity;
-using Npgsql;
 
 namespace Raven.DB.PSQL.TrainingData
 {
