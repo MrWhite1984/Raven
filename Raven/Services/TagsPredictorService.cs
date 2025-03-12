@@ -62,6 +62,7 @@ namespace Raven.Services
 
         public override Task<AddBodyPostWithTagsToTrainDataResponse> AddBodyPostWithTagsToTrainData(AddBodyPostWithTagsToTrainDataRequest request, ServerCallContext context)
         {
+            //TODO переделать структуру запроса, просить не названия тегов, а TagMessage
             try
             {
                 var response = new AddBodyPostWithTagsToTrainDataResponse();

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from http.client import HTTPException
 
@@ -114,11 +115,3 @@ async def get_data_from_db():
 
     except Exception as e:
         print(e)
-
-
-def start_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(retrain_model, IntervalTrigger(hours=12), id='retrain_job', name='Retrain model every 12 hours')
-    scheduler.start()
-
-start_scheduler()
