@@ -195,7 +195,6 @@ namespace Raven.Services
                     Id = (uint)getCategoryResponse.Result.Item1.Id,
                     Title = getCategoryResponse.Result.Item1.Title,
                     ImageFile = getCategoryResponse.Result.Item1.ImageFile.ToString(),
-                    PostCount = (uint)getCategoryResponse.Result.Item1.PostCount,
                     Image = getCategoryImageResponse != null ? ByteString.CopyFrom(getCategoryImageResponse.Result.Item2) : ByteString.Empty
                 },
                 AuthorId = dbResponse.Result.Item2.AuthorId,

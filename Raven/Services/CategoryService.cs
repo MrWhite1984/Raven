@@ -161,8 +161,7 @@ namespace Raven.Services
             {
                 Id = (uint)category.Id,
                 Title = category.Title,
-                ImageFile = category.ImageFile.ToString(),
-                PostCount = (uint)category.PostCount
+                ImageFile = category.ImageFile.ToString()
             };
             return response;
         }

@@ -10,7 +10,7 @@ namespace Raven.DB.Redis
 
         public RedisDbContext()
         {
-            connectionMultiplexer = ConnectionMultiplexer.Connect("redis-logs:6379");
+            connectionMultiplexer = ConnectionMultiplexer.Connect("redis-logs:6379,abortConnect=false");
             db = connectionMultiplexer.GetDatabase();
         }
 

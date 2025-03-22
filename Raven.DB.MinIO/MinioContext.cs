@@ -17,7 +17,6 @@ namespace Raven.DB.MinIO
         {
             var bucketNames = new List<string> 
             { 
-                "logs",
                 "category-images",
                 "post-images",
                 "post-videos",

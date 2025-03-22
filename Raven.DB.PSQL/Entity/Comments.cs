@@ -4,7 +4,6 @@
     {
         public Guid Id { get; set; }
         public string Body { get; set; }
-        public int CommentsCount { get; set; }
         public string AuthorId { get; set; }
         public virtual Users User { get; set; }
         public DateTime CreatedAt { get; set; }
