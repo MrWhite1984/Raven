@@ -18,19 +18,19 @@ namespace Raven.Logger
                 DateTime = DateTime.UtcNow,
                 LogSender = "Raven"
             };
-            var db = new RedisDbContext();
+            var db = new RedisLogsDbContext();
             db.WriteAsync(JsonSerializer.Serialize(log));
         }
 
         public static void FlushBuffer()
         {
-            var dbLogs = new RedisDbContext()
+            var dbLogs = new RedisLogsDbContext()
                 .ReadAsync()
                 .Result
                 .ToList();
             var logs = dbLogs.Select(o => JsonSerializer.Deserialize<Logs>(o)).ToList();
             LogsHandler.ImportLogsAsync(logs);
-            new RedisDbContext().ClearAsync();
+            new RedisLogsDbContext().ClearAsync();
         }
 
     }

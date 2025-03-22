@@ -2,6 +2,7 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
+using Newtonsoft.Json;
 using Raven.DB.MinIO;
 using Raven.DB.Neo4j.Creator;
 using Raven.DB.Neo4j.Deleters;
@@ -14,8 +15,12 @@ using Raven.DB.PSQL.gRPC.Deleters;
 using Raven.DB.PSQL.gRPC.Exporters;
 using Raven.DB.PSQL.gRPC.Importers;
 using Raven.DB.PSQL.gRPC.Updaters;
+using Raven.DB.Redis;
+using Raven.JsonSettings;
+using Raven.Models;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.Json;
 
 namespace Raven.Services
 {
@@ -432,6 +437,26 @@ namespace Raven.Services
             {
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
+            var cacheKey = $"UserId: {request.UserId}\nPageSize: {request.PageSize}\nCursor: {dateTimeCursor}";
+            var cacheResult = new RedisCacheDbContext().ReadCacheAsync(cacheKey);
+            if (cacheResult != null)
+            {
+                var settings = new JsonSerializerSettings();
+                settings.Converters.Add(new ByteStringJsonConverter());
+                var cache = JsonConvert.DeserializeObject<GetPostsCacheModel>(cacheResult, settings);
+                var posts = cache.postMessageList;
+                posts = AddContentToPostMessage(posts).Result;
+                if (posts.Count != 0)
+                {
+                    response.Code = 200;
+                    response.Message = "OK";
+                    response.Entities.AddRange(posts);
+                    response.NextCursor = Timestamp.FromDateTime(cache.cursor);
+                    Logger.Logger.Log(LogLevel.Information, $"Выданы предзагруженные посты для пользователя {request.UserId}");
+                    Task.Run(() => PreloadNextPageGetPostsAsync(request.UserId, (int)request.PageSize, cache.cursor));
+                    return Task.FromResult(response);
+                }
+            }
             var dbResponse = PostExporter.GetPosts(dateTimeCursor, (int)request.PageSize);
             if (dbResponse.Result.Item2 != "OK")
             {
@@ -482,6 +507,7 @@ namespace Raven.Services
             response.Code = 200;
             response.Message = "OK";
             Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на получение постов ({response.Entities.Count})");
+            Task.Run(() => PreloadNextPageGetPostsAsync(request.UserId, (int)request.PageSize, dbResponse.Result.Item3));
             return Task.FromResult(response);
         }
 
@@ -971,6 +997,169 @@ namespace Raven.Services
             response.Item1 = postMessage;
             response.Item2 = "OK";
             return response;
+        }
+
+        public async static Task<(PostMessage, string)> CreatePostMessageWithoutContent(Posts post)
+        {
+            (PostMessage, string) response = (null, "");
+            var postMessage = new PostMessage()
+            {
+                Id = post.Id.ToString(),
+                Title = post.Title,
+                Body = post.Body,
+                CategoryMessage = new CategoryMessage()
+                {
+                    Id = (uint)post.CategoryPost.Id,
+                    Title = post.CategoryPost.Title,
+                    ImageFile = post.CategoryPost.ImageFile.ToString(),
+                    Image = ByteString.CopyFrom(Exporter.GetCategoryImage(post.CategoryPost.ImageFile).Result.Item2)
+                },
+                LikesCount = (uint)post.LikesCount,
+                ViewsCount = (uint)post.ViewsCount,
+                BookmarksCount = (uint)post.BookmarksCount,
+                CommentCount = (uint)post.CommentCount,
+                AuthorId = post.AuthorId,
+                CreatedAt = Timestamp.FromDateTime(post.CreatedAt),
+                UpdatedAt = Timestamp.FromDateTimeOffset(post.UpdatedAt)
+            };
+
+            var getTagsPostResponse = TagsPostExporter.GetTagsPost(post.Id);
+            if (getTagsPostResponse.Result.Item2 != "OK")
+            {
+                response.Item2 = getTagsPostResponse.Result.Item2;
+                return response;
+            }
+            foreach (var tagPost in getTagsPostResponse.Result.Item1)
+            {
+                postMessage.Tags.Add
+                    (
+                        new TagMessage()
+                        {
+                            Id = (uint)tagPost.Tag.Id,
+                            Name = tagPost.Tag.Name,
+                        }
+                    );
+            }
+
+            var getPostContentResponse = PostContentExporter.GetContentPost(post.Id);
+            if (getPostContentResponse.Result.Item2 != "OK")
+            {
+                response.Item2 = getPostContentResponse.Result.Item2;
+                return response;
+            }
+            foreach (var content in getPostContentResponse.Result.Item1)
+            {
+                if (content.ContentType.Equals(ContentType.Image))
+                {
+                    
+                    postMessage.PostContentMessage.Add
+                        (
+                            new PostContentMessage()
+                            {
+                                ContentId = content.ContentId.ToString(),
+                                Marker = content.Marker,
+                                ContentTypeEnum = ContentTypeEnum.Image
+                            }
+                        );
+                }
+                else
+                {
+                    postMessage.PostContentMessage.Add
+                        (
+                            new PostContentMessage()
+                            {
+                                ContentId = content.ContentId.ToString(),
+                                Marker = content.Marker,
+                                ContentTypeEnum = ContentTypeEnum.Video
+                            }
+                        );
+                }
+            }
+            response.Item1 = postMessage;
+            response.Item2 = "OK";
+            return response;
+        }
+
+        public async Task<List<PostMessage>> AddContentToPostMessage(List<PostMessage> postMessages)
+        {
+            foreach (var post in postMessages)
+            {
+                foreach (var content in post.PostContentMessage)
+                {
+                    if (content.ContentTypeEnum.Equals(ContentTypeEnum.Image))
+                    {
+                        var postContentResponse = Exporter.GetPostImage(Guid.Parse(content.ContentId));
+                        if (postContentResponse.Result.Item1 != "OK")
+                        {
+                            Logger.Logger.Log(LogLevel.Error, postContentResponse.Result.Item1);
+                            return null;
+                        }
+                        content.Content = ByteString.CopyFrom(postContentResponse.Result.Item2);
+                    }
+                    else
+                    {
+                        var postContentResponse = Exporter.GetPostVideos(Guid.Parse(content.ContentId));
+                        if (postContentResponse.Result.Item1 != "OK")
+                        {
+                            Logger.Logger.Log(LogLevel.Error, postContentResponse.Result.Item1);
+                            return null;
+                        }
+                        ByteString.CopyFrom(postContentResponse.Result.Item2);
+                    }
+                }
+            }
+            return postMessages;
+        }
+
+        private async Task PreloadNextPageGetPostsAsync(string userId, int pageSize, DateTime cursor)
+        {
+            List<PostMessage> postMessages = new List<PostMessage>();
+            var dbResponse = PostExporter.GetPosts(cursor, pageSize);
+            if (dbResponse.Result.Item2 != "OK")
+            {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
+                return;
+            }
+            foreach (var post in dbResponse.Result.Item1)
+            {
+                var createPostMessageResponse = CreatePostMessageWithoutContent(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
+                {
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    return;
+                }
+                var postMessage = createPostMessageResponse.Result.Item1;
+
+                var neo4jLikeCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostLikeRelationship(userId, post.Id.ToString()).Result;
+                var neo4jViewCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostViewRelationship(userId, post.Id.ToString()).Result;
+                var neo4jBookmarkCheckerResponse = Neo4jRelationshipExistChecker.CheckExistPostBookmarkRelationship(userId, post.Id.ToString()).Result;
+
+                if
+                    (
+                    neo4jLikeCheckerResponse.Item1 != "OK" ||
+                    neo4jViewCheckerResponse.Item1 != "OK" ||
+                    neo4jBookmarkCheckerResponse.Item1 != "OK"
+                    )
+                {
+                    Logger.Logger.Log(LogLevel.Error, "Ошибка работы с Neo4j");
+                    return;
+                }
+
+                postMessage.IsLiked = neo4jLikeCheckerResponse.Item2;
+                postMessage.IsViewed = neo4jViewCheckerResponse.Item2;
+                postMessage.IsBookmarked = neo4jBookmarkCheckerResponse.Item2;
+
+                postMessages.Add(postMessage);
+            }
+            DateTime nextCursor = dbResponse.Result.Item3;
+            GetPostsCacheModel getPostsCacheModel = new GetPostsCacheModel();
+            getPostsCacheModel.cursor = nextCursor;
+            getPostsCacheModel.postMessageList.AddRange(postMessages);
+            var cache = getPostsCacheModel.Serialize();
+            var cacheKey = $"UserId: {userId}\nPageSize: {pageSize}\nCursor: {cursor}";
+            RedisCacheDbContext db = new RedisCacheDbContext();
+            db.WriteAsync(cacheKey, cache);
+            Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на предзагрузку постов ({postMessages.Count})");
         }
     }
 

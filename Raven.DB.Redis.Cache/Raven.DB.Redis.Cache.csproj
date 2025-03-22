@@ -6,9 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>   
-	<ProjectReference Include="..\Raven.DB.PSQL\Raven.DB.PSQL.ServiceData.csproj" />
-    <ProjectReference Include="..\Raven.DB.Redis\Raven.DB.Redis.Logs.csproj" />
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
   </ItemGroup>
 
 </Project>

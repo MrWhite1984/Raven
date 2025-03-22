@@ -2,13 +2,13 @@
 
 namespace Raven.DB.Redis
 {
-    public class RedisDbContext
+    public class RedisLogsDbContext
     {
         private readonly ConnectionMultiplexer connectionMultiplexer;
         private readonly IDatabase db;
         const string LogsKey = "logs";
 
-        public RedisDbContext()
+        public RedisLogsDbContext()
         {
             connectionMultiplexer = ConnectionMultiplexer.Connect("redis-logs:6379,abortConnect=false");
             db = connectionMultiplexer.GetDatabase();

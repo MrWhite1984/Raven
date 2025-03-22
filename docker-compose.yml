@@ -32,6 +32,15 @@ services:
    - redis_data:/data
   networks:
    - RavenNetwork
+ 
+ redis-cache:
+  image: redis:latest
+  ports:
+   - "6380:6379"
+  volumes:
+   - redis_cache_data:/data
+  networks:
+   - RavenNetwork
 
  minio:
   image: minio/minio:latest
@@ -101,4 +110,6 @@ volumes:
   neo4j-data:
    driver: local
   redis_data:
+   driver: local
+  redis_cache_data:
    driver: local
