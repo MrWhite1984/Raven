@@ -437,7 +437,7 @@ namespace Raven.Services
             {
                 dateTimeCursor = request.Cursor.ToDateTime();
             }
-            var cacheKey = $"UserId: {request.UserId}\nPageSize: {request.PageSize}\nCursor: {dateTimeCursor}";
+            var cacheKey = $"GetPosts\nUserId: {request.UserId}\nPageSize: {request.PageSize}\nCursor: {dateTimeCursor}";
             var cacheResult = new RedisCacheDbContext().ReadCacheAsync(cacheKey);
             if (cacheResult != null)
             {
@@ -521,6 +521,25 @@ namespace Raven.Services
                 response.Message = "UserId был пустой";
                 return Task.FromResult(response);
             }
+            var cacheKey = $"GetRecommendedPosts\nUserId: {request.UserId}\nPageSize: {request.PageSize}";
+            var cacheResult = new RedisCacheDbContext().ReadCacheAsync(cacheKey);
+            if (cacheResult != null)
+            {
+                var settings = new JsonSerializerSettings();
+                settings.Converters.Add(new ByteStringJsonConverter());
+                var cache = JsonConvert.DeserializeObject<List<PostMessage>>(cacheResult, settings);
+                var posts = cache;
+                posts = AddContentToPostMessage(posts).Result;
+                if (posts.Count != 0)
+                {
+                    response.Code = 200;
+                    response.Message = "OK";
+                    response.Entities.AddRange(posts);
+                    Logger.Logger.Log(LogLevel.Information, $"Выданы предзагруженные посты для пользователя {request.UserId}");
+                    Task.Run(() => PreloadNextPageGetRecommendedPostsAsync(request.UserId, (int)request.PageSize));
+                    return Task.FromResult(response);
+                }
+            }
             var neo4jGetRecommendedPostResponse = Neo4jPostExporter.GetRecommendedPosts(request.UserId, (int)request.PageSize);
             if(neo4jGetRecommendedPostResponse.Result.Item1 != "OK")
             {
@@ -554,6 +573,7 @@ namespace Raven.Services
             Logger.Logger.Log(LogLevel.Information,
                 $"Выполнен запрос на получение рекомендованных постов " +
                 $"({response.Entities.Count}) для пользователя {request.UserId}");
+            Task.Run(() => PreloadNextPageGetRecommendedPostsAsync(request.UserId, (int)request.PageSize));
             return Task.FromResult(response);
         }
 
@@ -1156,7 +1176,39 @@ namespace Raven.Services
             getPostsCacheModel.cursor = nextCursor;
             getPostsCacheModel.postMessageList.AddRange(postMessages);
             var cache = getPostsCacheModel.Serialize();
-            var cacheKey = $"UserId: {userId}\nPageSize: {pageSize}\nCursor: {cursor}";
+            var cacheKey = $"GetPosts\nUserId: {userId}\nPageSize: {pageSize}\nCursor: {cursor}";
+            RedisCacheDbContext db = new RedisCacheDbContext();
+            db.WriteAsync(cacheKey, cache);
+            Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на предзагрузку постов ({postMessages.Count})");
+        }
+
+        private async Task PreloadNextPageGetRecommendedPostsAsync(string userId, int pageSize)
+        {
+            List<PostMessage> postMessages = new List<PostMessage>();
+            var neo4jGetRecommendedPostResponse = Neo4jPostExporter.GetRecommendedPosts(userId, (int)pageSize);
+            if (neo4jGetRecommendedPostResponse.Result.Item1 != "OK")
+            {
+                Logger.Logger.Log(LogLevel.Error, neo4jGetRecommendedPostResponse.Result.Item1);
+                return;
+            }
+            var dbResponse = PostExporter.GetPostsByIdsList(neo4jGetRecommendedPostResponse.Result.Item2);
+            if (dbResponse.Result.Item2 != "OK")
+            {
+                Logger.Logger.Log(LogLevel.Error, dbResponse.Result.Item2);
+                return;
+            }
+            foreach (var post in dbResponse.Result.Item1)
+            {
+                var createPostMessageResponse = CreatePostMessageWithoutContent(post);
+                if (createPostMessageResponse.Result.Item2 != "OK")
+                {
+                    Logger.Logger.Log(LogLevel.Error, createPostMessageResponse.Result.Item2);
+                    return;
+                }
+                postMessages.Add(createPostMessageResponse.Result.Item1);
+            }
+            var cache = JsonConvert.SerializeObject(postMessages);
+            var cacheKey = $"GetRecommendedPosts\nUserId: {userId}\nPageSize: {pageSize}";
             RedisCacheDbContext db = new RedisCacheDbContext();
             db.WriteAsync(cacheKey, cache);
             Logger.Logger.Log(LogLevel.Information, $"Выполнен запрос на предзагрузку постов ({postMessages.Count})");
