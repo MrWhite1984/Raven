@@ -55,6 +55,6 @@
 <image src="git_img/Architecture.png">
 <h2>Компоненты Raven</h2>
 <image src="git_img/Components.png">
-<h2>Структура основной PostgreSQL базы данных</h2>
+<h2>Структура основной PostgresSQL базы данных</h2>
 <image src="git_img/DB.png">
 
